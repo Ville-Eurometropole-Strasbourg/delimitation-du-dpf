@@ -1,4 +1,4 @@
-from qgis.core import QgsPointXY, QgsRaster
+from qgis.core import QgsPointXY, QgsRaster, QgsGeometry
 import pandas as pd
 
 def nearest_points_RivCentre(centerline_layer, points_transects):

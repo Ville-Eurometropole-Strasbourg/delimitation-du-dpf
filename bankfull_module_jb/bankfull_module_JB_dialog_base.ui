@@ -6,12 +6,12 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>544</width>
+    <width>681</width>
     <height>776</height>
    </rect>
   </property>
   <property name="windowTitle">
-   <string>Dialog</string>
+   <string>Module Bankfull</string>
   </property>
   <layout class="QHBoxLayout" name="horizontalLayout">
    <item>
@@ -30,6 +30,13 @@
        <string>Prétraitements</string>
       </attribute>
       <layout class="QGridLayout" name="gridLayout">
+       <item row="0" column="1" colspan="2">
+        <widget class="QLabel" name="label_36">
+         <property name="text">
+          <string>Répertoire d'enregistrement :</string>
+         </property>
+        </widget>
+       </item>
        <item row="11" column="3" colspan="2">
         <widget class="QLabel" name="label_11">
          <property name="font">
@@ -41,53 +48,6 @@
          </property>
          <property name="text">
           <string>Utilisation du raster de courbure. </string>
-         </property>
-        </widget>
-       </item>
-       <item row="10" column="1" colspan="2">
-        <widget class="QPushButton" name="pushButton_Exporter_donnees">
-         <property name="text">
-          <string>Export des données brutes (.csv)</string>
-         </property>
-        </widget>
-       </item>
-       <item row="9" column="1" colspan="3">
-        <widget class="QLabel" name="label_30">
-         <property name="font">
-          <font>
-           <family>Arial</family>
-           <pointsize>9</pointsize>
-           <weight>50</weight>
-           <bold>false</bold>
-           <underline>true</underline>
-          </font>
-         </property>
-         <property name="text">
-          <string>Interpolation des points le long des transects</string>
-         </property>
-        </widget>
-       </item>
-       <item row="7" column="1">
-        <widget class="QLabel" name="label_5">
-         <property name="text">
-          <string>Pas (m) : </string>
-         </property>
-        </widget>
-       </item>
-       <item row="0" column="1" colspan="2">
-        <widget class="QLabel" name="label_36">
-         <property name="text">
-          <string>Répertoire d'enregistrement :</string>
-         </property>
-        </widget>
-       </item>
-       <item row="14" column="1" colspan="4">
-        <widget class="QGraphicsView" name="graphicsView_transects"/>
-       </item>
-       <item row="1" column="1" colspan="2">
-        <widget class="QLabel" name="label_27">
-         <property name="text">
-          <string>Couche Raster : </string>
          </property>
         </widget>
        </item>
@@ -104,6 +64,13 @@
          </property>
          <property name="text">
           <string>Génération des transects </string>
+         </property>
+        </widget>
+       </item>
+       <item row="12" column="4">
+        <widget class="QPushButton" name="pushButton_tracer_transects">
+         <property name="text">
+          <string>Tracer</string>
          </property>
         </widget>
        </item>
@@ -129,26 +96,33 @@
          </property>
         </widget>
        </item>
-       <item row="2" column="3">
-        <widget class="QComboBox" name="comboBox_polygon"/>
-       </item>
-       <item row="0" column="3">
-        <widget class="QgsFileWidget" name="mQgsFileWidget_folder">
-         <property name="fileWidgetButtonVisible">
-          <bool>true</bool>
-         </property>
-         <property name="useLink">
-          <bool>false</bool>
-         </property>
-         <property name="fullUrl">
-          <bool>false</bool>
+       <item row="7" column="1">
+        <widget class="QLabel" name="label_5">
+         <property name="text">
+          <string>Pas (m) : </string>
          </property>
         </widget>
        </item>
-       <item row="6" column="1">
-        <widget class="QLabel" name="label_4">
+       <item row="9" column="1" colspan="3">
+        <widget class="QLabel" name="label_30">
+         <property name="font">
+          <font>
+           <family>Arial</family>
+           <pointsize>9</pointsize>
+           <weight>50</weight>
+           <bold>false</bold>
+           <underline>true</underline>
+          </font>
+         </property>
          <property name="text">
-          <string>Longueur (m) : </string>
+          <string>Interpolation des points le long des transects</string>
+         </property>
+        </widget>
+       </item>
+       <item row="11" column="1" colspan="2">
+        <widget class="QPushButton" name="pushButton_Exporter_donnees_curve">
+         <property name="text">
+          <string>Export des données de courbure (.csv)</string>
          </property>
         </widget>
        </item>
@@ -168,6 +142,22 @@
          </property>
         </widget>
        </item>
+       <item row="2" column="3">
+        <widget class="QComboBox" name="comboBox_polygon"/>
+       </item>
+       <item row="0" column="3">
+        <widget class="QgsFileWidget" name="mQgsFileWidget_folder">
+         <property name="fileWidgetButtonVisible">
+          <bool>true</bool>
+         </property>
+         <property name="useLink">
+          <bool>false</bool>
+         </property>
+         <property name="fullUrl">
+          <bool>false</bool>
+         </property>
+        </widget>
+       </item>
        <item row="3" column="1" colspan="2">
         <widget class="QLabel" name="label_2">
          <property name="font">
@@ -184,29 +174,12 @@
          </property>
         </widget>
        </item>
-       <item row="11" column="1" colspan="2">
-        <widget class="QPushButton" name="pushButton_Exporter_donnees_curve">
+       <item row="2" column="1" colspan="2">
+        <widget class="QLabel" name="label_29">
          <property name="text">
-          <string>Export des données de courbure (.csv)</string>
+          <string>Couche Polygone : </string>
          </property>
         </widget>
-       </item>
-       <item row="12" column="4">
-        <widget class="QPushButton" name="pushButton_tracer_transects">
-         <property name="text">
-          <string>Tracer</string>
-         </property>
-        </widget>
-       </item>
-       <item row="3" column="4">
-        <widget class="QPushButton" name="pushButton_CalculerCenterline">
-         <property name="text">
-          <string>Calculer </string>
-         </property>
-        </widget>
-       </item>
-       <item row="1" column="3">
-        <widget class="QComboBox" name="comboBox_MNT"/>
        </item>
        <item row="6" column="3">
         <widget class="QLineEdit" name="lineEdit_l_transect">
@@ -218,24 +191,51 @@
          </property>
         </widget>
        </item>
-       <item row="7" column="4">
-        <widget class="QPushButton" name="pushButton_CalculerTransects">
+       <item row="1" column="1" colspan="2">
+        <widget class="QLabel" name="label_27">
          <property name="text">
-          <string>Calculer </string>
+          <string>Couche Raster : </string>
          </property>
         </widget>
        </item>
-       <item row="2" column="1" colspan="2">
-        <widget class="QLabel" name="label_29">
+       <item row="6" column="1">
+        <widget class="QLabel" name="label_4">
          <property name="text">
-          <string>Couche Polygone : </string>
+          <string>Longueur (m) : </string>
          </property>
         </widget>
+       </item>
+       <item row="1" column="3">
+        <widget class="QComboBox" name="comboBox_MNT"/>
        </item>
        <item row="16" column="1">
         <widget class="QLabel" name="label_current_profile">
          <property name="text">
           <string/>
+         </property>
+        </widget>
+       </item>
+       <item row="14" column="1" colspan="4">
+        <widget class="QGraphicsView" name="graphicsView_transects"/>
+       </item>
+       <item row="3" column="4">
+        <widget class="QPushButton" name="pushButton_CalculerCenterline">
+         <property name="text">
+          <string>Calculer </string>
+         </property>
+        </widget>
+       </item>
+       <item row="10" column="1" colspan="2">
+        <widget class="QPushButton" name="pushButton_Exporter_donnees">
+         <property name="text">
+          <string>Export des données brutes (.csv)</string>
+         </property>
+        </widget>
+       </item>
+       <item row="7" column="4">
+        <widget class="QPushButton" name="pushButton_CalculerTransects">
+         <property name="text">
+          <string>Calculer </string>
          </property>
         </widget>
        </item>

@@ -3,18 +3,15 @@ import numpy as np
 import pandas as pd
 from scipy.signal import find_peaks
 
-def find_bankfull_M1(spline_results):
-
+def find_bankfull_M1(spline_results, directory_path):
     """
     Trouve l'altitude maximale de débordement pour chaque transect.
-
     :param spline_results: (list) Liste de tuples (idx, x_smooth, y_smooth) représentant
         les résultats de l'interpolation par spline pour chaque transect.
 
     :return: (list) Liste de tuples contenant l'indice du transect et l'altitude maximale
         de débordement pour ce transect.
     """
-
     altitude_max_amplitudes = []  # Liste pour stocker les altitudes maximales de débordement
     for idx, x_smooth, y_smooth in spline_results:
         y_smooth_np = np.array(y_smooth)
@@ -34,21 +31,23 @@ def find_bankfull_M1(spline_results):
             max_diff_index = np.argmax(diff_smooth)
             altitude_max_amplitude = x_smooth[max_diff_index + 1]
         altitude_max_amplitudes.append((idx, altitude_max_amplitude))
+    # Créer un DataFrame à partir de la liste de tuples
+    bankfull_max_amplitude = pd.DataFrame(altitude_max_amplitudes, columns=['x_sec_id', 'altitude'])
+    # Export dans un fichier .csv
+    df_output_path = os.path.join(directory_path, "bankfull_max_amplitude.csv")
+    bankfull_max_amplitude.to_csv(df_output_path, sep=',', index=False)
+    print(f"Les altitudes ont été exportées avec succès vers : {df_output_path}")
     return altitude_max_amplitudes
 
-def find_bankfull_M2(spline_results):
-
+def find_bankfull_M2(spline_results, directory_path):
     """
     Trouve l'altitude de débordement pour chaque transect en se basant sur l'altitude
     de débordement du transect précédent.
-
     :param spline_results: (list) Liste de tuples (idx, x_smooth, y_smooth) représentant
         les résultats de l'interpolation par spline pour chaque transect.
-
     :return: (list) Liste de tuples contenant l'indice du transect et l'altitude de débordement
         pour ce transect.
     """
-    
     bankfull_values = []  # Liste pour stocker les altitudes de débordement de tous les transects
     prev_bankfull = None  # Tuple pour stocker l'altitude de débordement du transect précédent
     for idx, x_smooth, y_smooth in spline_results:
@@ -73,5 +72,12 @@ def find_bankfull_M2(spline_results):
             alti_bankfull = prev_bankfull[1]
         bankfull_values.append((idx, alti_bankfull))
         prev_bankfull = (idx, alti_bankfull)
+    
+    # Créer un DataFrame à partir de la liste de tuples
+    bankfull_previous_transects = pd.DataFrame(bankfull_values, columns=['x_sec_id', 'altitude'])
+    # Export dans un fichier .csv
+    df_output_path = os.path.join(directory_path, "bankfull_previous_transects.csv")
+    bankfull_previous_transects.to_csv(df_output_path, sep=',', index=False)
+    print(f"Les altitudes ont été exportées avec succès vers : {df_output_path}")
 
     return bankfull_values

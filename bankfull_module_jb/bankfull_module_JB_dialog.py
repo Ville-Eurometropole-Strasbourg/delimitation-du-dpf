@@ -22,41 +22,30 @@
  ***************************************************************************/
 """
 
-import csv
-import math
 import os
-import traceback
 
 import geopandas as gpd
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import pyproj
-import rasterio
-import statsmodels as sm
-from centerline.geometry import Centerline
+
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
-from matplotlib.colors import ListedColormap
-from matplotlib.dates import DateFormatter
-from matplotlib.lines import Line2D
-from matplotlib.ticker import MaxNLocator
 from PyQt5 import QtCore, QtWidgets
-from PyQt5.QtWidgets import *
-from qgis.core import *
 from qgis.gui import QgsFileWidget
 from qgis.PyQt import QtWidgets, uic
-from rasterio.plot import show
-from scipy.interpolate import UnivariateSpline, interp1d
-from scipy.optimize import curve_fit
-from scipy.signal import find_peaks, savgol_filter
-from scipy.spatial.distance import euclidean
-from scipy.stats import probplot
+from qgis.core import (
+    QgsProject,
+    QgsVectorLayer,
+    QgsPointXY,
+    QgsGeometry,
+    QgsMapLayer,
+    QgsMapLayerType,
+    QgsWkbTypes,
+)
 from shapely.geometry import *
-from shapely.ops import linemerge, polygonize_full
 from shapely.wkb import loads as load_wkb
-from shapely.wkt import loads
-from sklearn.model_selection import train_test_split
-
+from scipy.interpolate import interp1d
 from .calcul_aires import calculer_aire
 from .calcul_prof_hydr import CalculerProfHydr
 from .calculate_centerline import calculate_centerline, clean_centerline
@@ -82,7 +71,6 @@ class bankfullJBDialog(QtWidgets.QDialog, FORM_CLASS):
         self.update_polygon_layers()
         self.comboBox_MNT.activated.connect(self.select_couche_MNT)
         self.comboBox_polygon.activated.connect(self.select_couche_polygon)
-        self.tabWidget.currentChanged.connect(self.on_tab_changed)
         self.directory_path = None
         self.all_projected_distances = None
         self.all_projected_altitudes = None
@@ -90,6 +78,13 @@ class bankfullJBDialog(QtWidgets.QDialog, FORM_CLASS):
         self.pts_limites_results_list = []
         self.coords_3D_list = []
 
+        self.sliders_label = {
+            self.horizontalSlider_visualisation_transects: self.label_current_profile,
+            self.verticalSlider_visualisation: self.label_current_profile_2,
+            self.horizontalSlider_pic_curve: self.label_current_profile_3,
+            self.horizontalSlider_final_results: self.label_current_profile_4,
+        }
+        self.init_sliders()
         # --------------------------------------------------------------------------------
         # Connexion des signals
         # --------------------------------------------------------------------------------
@@ -102,8 +97,6 @@ class bankfullJBDialog(QtWidgets.QDialog, FORM_CLASS):
             self.export_donnees_curve
         )
         self.pushButton_tracer_transects.clicked.connect(self.tracer_transects)
-        self.pushButton_CalculerAires.clicked.connect(self.calc_aires)
-        self.pushButton_CalculerProfHydr.clicked.connect(self.calc_prof_hydr)
         self.pushButton_Tracer_prof_hydr.clicked.connect(self.tracer_prof_hydr)
         self.pushButton_Lisser_courbes.clicked.connect(self.lissage_spline)
         self.radioButton_prof_hydr_max_amplitude.clicked.connect(
@@ -119,111 +112,61 @@ class bankfullJBDialog(QtWidgets.QDialog, FORM_CLASS):
         # --------------------------------------------------------------------------------
         # Initialisation des slider pour la visualisation dans les fenêtres graphiques
         # --------------------------------------------------------------------------------
-        if self.horizontalSlider_visualisation_transects:
-            self.horizontalSlider_visualisation_transects.setValue(0)
-            self.horizontalSlider_visualisation_transects.valueChanged.connect(
-                self.tracer_transects
-            )
-            self.horizontalSlider_visualisation_transects.valueChanged.connect(
-                self.update_current_profile_label
-            )
-            self.horizontalSlider_visualisation_transects.setValue(0)
-            self.update_current_profile_label(0)
-
-        if self.verticalSlider_visualisation:
-            self.verticalSlider_visualisation.setValue(0)
-            self.verticalSlider_visualisation.valueChanged.connect(
-                self.tracer_prof_hydr
-            )
-            self.verticalSlider_visualisation.valueChanged.connect(
-                self.update_current_profile_label_2
-            )
-            self.update_current_profile_label_2(0)
-
-        if self.horizontalSlider_pic_curve:
-            self.horizontalSlider_pic_curve.setValue(0)
-            self.horizontalSlider_pic_curve.valueChanged.connect(self.tracer_pic_curve)
-            self.horizontalSlider_pic_curve.valueChanged.connect(
-                self.update_current_profile_label_3
-            )
-            self.update_current_profile_label_3(0)
-
-        if self.horizontalSlider_final_results:
-            self.horizontalSlider_final_results.setValue(0)
-            self.horizontalSlider_final_results.valueChanged.connect(
-                self.visualize_final_results
-            )
-            self.horizontalSlider_final_results.valueChanged.connect(
-                self.update_current_profile_label_4
-            )
-            self.update_current_profile_label_4(0)
+        self.horizontalSlider_visualisation_transects.valueChanged.connect(
+            self.tracer_transects
+        )
+        self.verticalSlider_visualisation.valueChanged.connect(self.tracer_prof_hydr)
+        self.horizontalSlider_pic_curve.valueChanged.connect(self.tracer_pic_curve)
+        self.horizontalSlider_final_results.valueChanged.connect(
+            self.visualize_final_results
+        )
 
     # --------------------------------------------------------------------------------
     # Connexions appropriées chaque fois que l'utilisateur change d'onglet
     # --------------------------------------------------------------------------------
     def on_tab_changed(self, index):
-        if self.pushButton_CalculerCenterline:
-            self.pushButton_CalculerCenterline.clicked.connect(self.calc_centerline)
-        if self.pushButton_CalculerTransects:
-            self.pushButton_CalculerTransects.clicked.connect(self.calc_transects)
-        if self.pushButton_Exporter_donnees:
-            self.pushButton_Exporter_donnees.clicked.connect(self.export_donnees)
-        if self.pushButton_Exporter_donnees_curve:
-            self.pushButton_Exporter_donnees_curve.clicked.connect(
-                self.export_donnees_curve
-            )
-        if self.pushButton_CalculerAires:
-            self.pushButton_CalculerAires.clicked.connect(self.calc_aires)
-        if self.pushButton_CalculerProfHydr:
-            self.pushButton_CalculerProfHydr.clicked.connect(self.calc_prof_hydr)
-        if self.pushButton_Tracer_prof_hydr:
-            self.pushButton_Tracer_prof_hydr.clicked.connect(self.tracer_prof_hydr)
-        if self.pushButton_Lisser_courbes:
-            self.pushButton_Lisser_courbes.clicked.connect(self.lissage_spline)
-        if self.pushButton_tracer_transects:
-            self.pushButton_tracer_transects.clicked.connect(self.tracer_transects)
-        if self.radioButton_previous_transect:
-            self.radioButton_previous_transect.clicked.connect(
-                self.find_banfkull_previous_transects
-            )
-        if self.radioButton_amplitude_max:
-            self.radioButton_amplitude_max.clicked.connect(
-                self.find_bankfull_max_amplitude
-            )
-        if self.radioButton_curvature:
-            self.radioButton_curvature.clicked.connect(self.select_curvature)
-        if self.pushButton_pic_curve:
-            self.pushButton_pic_curve.clicked.connect(self.pic_curve)
-        if self.pushButton_tracer_pic_curve:
-            self.pushButton_tracer_pic_curve.clicked.connect(self.tracer_pic_curve)
-        if self.pushButton_exporter_points_limite:
-            self.pushButton_exporter_points_limite.clicked.connect(
-                self.exporter_points_limite
-            )
-        if self.pushButton_calculer_coord_3D:
-            self.pushButton_calculer_coord_3D.clicked.connect(
-                self.call_coord_points_limites
-            )
+        # self.pushButton_CalculerCenterline.clicked.connect(self.calc_centerline)
+        self.pushButton_CalculerTransects.clicked.connect(self.calc_transects)
+        self.pushButton_Exporter_donnees.clicked.connect(self.export_donnees)
+        self.pushButton_Exporter_donnees_curve.clicked.connect(
+            self.export_donnees_curve
+        )
+        self.pushButton_CalculerAires.clicked.connect(self.calc_aires)
+        self.pushButton_CalculerProfHydr.clicked.connect(self.calc_prof_hydr)
+        self.pushButton_Tracer_prof_hydr.clicked.connect(self.tracer_prof_hydr)
+        self.pushButton_Lisser_courbes.clicked.connect(self.lissage_spline)
+        self.pushButton_tracer_transects.clicked.connect(self.tracer_transects)
+        self.radioButton_previous_transect.clicked.connect(
+            self.find_banfkull_previous_transects
+        )
+        self.radioButton_amplitude_max.clicked.connect(self.find_bankfull_max_amplitude)
+        self.radioButton_curvature.clicked.connect(self.select_curvature)
+        self.pushButton_pic_curve.clicked.connect(self.pic_curve)
+        self.pushButton_tracer_pic_curve.clicked.connect(self.tracer_pic_curve)
+        self.pushButton_exporter_points_limite.clicked.connect(
+            self.exporter_points_limite
+        )
+        self.pushButton_calculer_coord_3D.clicked.connect(
+            self.call_coord_points_limites
+        )
 
     # --------------------------------------------------------------------------------
     # Mise à jour du répertoire d'enregistrement et des QLabel
     # --------------------------------------------------------------------------------
-    def handle_folder_change(self, folder_path):
+    def init_sliders(self) -> None:
+        value = 0
+        for slider, label in self.sliders_label.items():
+            slider.setValue(value)
+            label.setText(f"Profil actuel : {value}")
+            # signal
+            slider.valueChanged.connect(self.update_current_profile_label)
+
+    def handle_folder_change(self, folder_path: str) -> None:
         print("Répertoire sélectionné:", folder_path)
         self.directory_path = folder_path
-        return folder_path
 
     def update_current_profile_label(self, value):
-        self.label_current_profile.setText(f"Profil actuel : {value}")
-
-    def update_current_profile_label_2(self, value):
-        self.label_current_profile_2.setText(f"Profil actuel : {value}")
-
-    def update_current_profile_label_3(self, value):
-        self.label_current_profile_3.setText(f"Profil actuel : {value}")
-
-    def update_current_profile_label_4(self, value):
-        self.label_current_profile_4.setText(f"Profil actuel : {value}")
+        self.sliders_label[self.sender()].setText(f"Profil actuel : {value}")
 
     # --------------------------------------------------------------------------------
     # Import des couches (données de départ)
@@ -261,11 +204,11 @@ class bankfullJBDialog(QtWidgets.QDialog, FORM_CLASS):
     # ----------------------------------------------------------------------------------
     def calc_centerline(self, checked: bool) -> None:
         """Calcul de la ligne centrale du cours d'eau
-        :param checked: checked is true if the button is checked, or false if the button is unchecked
+        :param checked: checked est "True" si le bouton est appuyé
         """
         # Définition du système de coorodnnées
-        crs_epsg = "EPSG:3948"
-        crs = pyproj.CRS.from_epsg(int(crs_epsg.split(":")[1]))
+        crs_epsg = 3948  # EPSG:3948
+        crs = pyproj.CRS.from_epsg(crs_epsg)
         # Récupération de la couche polygonale sélectionnée
         vector_layer = self.selected_polygon_layer
 
@@ -283,7 +226,20 @@ class bankfullJBDialog(QtWidgets.QDialog, FORM_CLASS):
         # Appel de la nouvelle fonction pour calculer la ligne centrale
         centerline_gdf, lines_number = calculate_centerline(gdf)
         # Nettoyage de la ligne centrale
-        clean_centerline(centerline_gdf, crs, self.directory_path)
+        merged_filtered_gdf, layer_path = clean_centerline(
+            centerline_gdf, crs, self.directory_path
+        )
+        if not merged_filtered_gdf.empty:
+            print("Export réussi:", layer_path)
+            # Ajout de la couche directement au projet
+            layer = QgsVectorLayer(layer_path, "clean_centerline", "ogr")
+            if not layer.isValid():
+                print("La couche n'est pas valide.")
+                return
+            QgsProject.instance().addMapLayer(layer)
+            print("Fichier clean_centerline.shp ajouté dans le projet avec succès")
+        else:
+            print("Géométrie vide")
 
     # ----------------------------------------------------------------------------------
     # -Calcul des transects perpendiculairement à la ligne centrale
@@ -302,7 +258,8 @@ class bankfullJBDialog(QtWidgets.QDialog, FORM_CLASS):
         mnt_layer = self.selected_MNT_layer
         pixelSizeX = mnt_layer.rasterUnitsPerPixelX()
 
-        # Calculer le nombre de points en fonction de la résolution et de la longueur spécifiée par l'utilisateur
+        # Calculer le nombre de points en fonction de la
+        # résolution et de la longueur des transects
         length = float(self.lineEdit_l_transect.text())
         nb_pts = int(length / pixelSizeX)
         print("Nombre de points interpolés le long des transects  :", nb_pts)
@@ -316,11 +273,13 @@ class bankfullJBDialog(QtWidgets.QDialog, FORM_CLASS):
             nearest_point_index, _ = nearest_points_RivCentre(
                 centerline_layer, transect_points
             )
-            # Création d'une liste contenant des booléens indiquant si chaque point est le plus proche de la ligne centrale
+            # Création d'une liste contenant des booléens indiquant
+            # si chaque point est le plus proche de la ligne centrale
             rivcentre_column = [
                 i == nearest_point_index for i in range(len(transect_points))
             ]
-            # Ajout d'une colonne 'RivCentre' remplie de valeurs booléennes à la liste points_transects
+            # Ajout d'une colonne 'RivCentre' remplie de
+            # valeurs booléennes à la liste points_transects
             points_transects.extend(
                 [
                     (transect_num, i, point[0], point[1], point[2], is_nearest)
@@ -344,15 +303,15 @@ class bankfullJBDialog(QtWidgets.QDialog, FORM_CLASS):
         )
         return df_transects
 
-    def export_donnees(self, directory_path):
+    def export_donnees(self, checked: bool) -> None:
         df_transects = self.projection_mnt()
         output_file_name = "cross_section_data.csv"
-        export_data(df_transects, directory_path, output_file_name)
+        export_data(df_transects, self.directory_path, output_file_name)
 
-    def export_donnees_curve(self, directory_path):
+    def export_donnees_curve(self, checked: bool) -> None:
         df_transects = self.projection_mnt()
         output_file_name = "curve_data.csv"
-        export_data(df_transects, directory_path, output_file_name)
+        export_data(df_transects, self.directory_path, output_file_name)
 
     # ----------------------------------------------------------------------------------
     # - Visualisation des transects dans la graphicsView
@@ -367,11 +326,13 @@ class bankfullJBDialog(QtWidgets.QDialog, FORM_CLASS):
             self.horizontalSlider_visualisation_transects.value()
         )
 
-        # Calcul du nombre de graphiques visibles en fonction de la hauteur de la fenêtre GraphicsView et de la hauteur d'un graphique
+        # Calcul du nombre de graphiques visibles en fonction de la hauteur
+        # de la GraphicsView et de la hauteur d'un graphique
         view_height = self.graphicsView_transects.height()
         graph_height = 250
         visible_graphs = int(view_height / graph_height)
-        # Déterminer l'indice de début en fonction de la valeur de la barre de défilement
+        # Déterminer l'indice de début en fonction
+        # de la valeur de la barre de défilement
         start_index = scrollbar_value_transects
         end_index = start_index + visible_graphs
         # Grouper par 'x_sec_id'
@@ -379,7 +340,8 @@ class bankfullJBDialog(QtWidgets.QDialog, FORM_CLASS):
         # Création de la scène
         scene_transects = QtWidgets.QGraphicsScene()
 
-        # Boucle sur les groupes de données pour créer les graphiques uniquement pour les indices visibles
+        # Boucle sur les groupes de données pour créer
+        # les graphiques uniquement pour les indices visibles
         for group_name, group_data in grouped_data:
             # Vérifier si l'indice actuel est dans la plage visible
             if start_index <= group_name < end_index:
@@ -417,8 +379,7 @@ class bankfullJBDialog(QtWidgets.QDialog, FORM_CLASS):
     # ----------------------------------------------------------------------------------
 
     # 0. Définition de la fonction d'appel reliée au pushButton_CalculerAires
-    def calc_aires(self):
-        # cross_section_data = pd.read_csv(r'S:\Commun\STAGIAIRE\2024_Juliette_BROCHIER\plugin\resultats\cross_section_data.csv')
+    def calc_aires(self) -> None:
         cross_section_data = pd.read_csv(
             os.path.join(self.directory_path, "cross_section_data.csv")
         )
@@ -460,7 +421,7 @@ class bankfullJBDialog(QtWidgets.QDialog, FORM_CLASS):
                     # Modifier le signe des aires en fonction de la classification
                     modified_area = area if classification == "above" else -area
 
-                    # Créer un dictionnaire pour chaque aire avec les informations requises
+                    # Dictionnaire pour chaque aire avec les informations requises
                     result_dict = {
                         "x_sec_id": x_sec_id,
                         "iteration": iteration,
@@ -475,9 +436,7 @@ class bankfullJBDialog(QtWidgets.QDialog, FORM_CLASS):
         results_df = pd.DataFrame(results_list)
         df_output_path = os.path.join(self.directory_path, "area_trapezes.csv")
         results_df.to_csv(df_output_path, sep=",", index=False)
-        print(
-            "Fichier .csv 'area_trapezes.csv' exporté avec succès. Ce fichier contient l'ensemble des aires crées entre le profil et la droite d'altitude de référence à chaque itération"
-        )
+        print("Fichier .csv 'area_trapezes.csv' exporté avec succès.")
 
     # 1. Calcul de l'indicateur de profondeur hydraulique pour chaque altitude présente
     # dans la liste de référence
@@ -502,12 +461,11 @@ class bankfullJBDialog(QtWidgets.QDialog, FORM_CLASS):
         # Mettre à jour le graphique avec les données chargées
         scrollbar_value = self.verticalSlider_visualisation.value()
 
-        # Calcul du nombre de graphiques visibles en fonction de la hauteur de la fenêtre GraphicsView et de la hauteur d'un graphique
+        # Calcul du nombre de graphiques visibles
         view_height = self.graphicsView_prof_hydr.height()
         graph_height = 286  # Hauteur approximative d'un graphique
         visible_graphs = max(1, int(view_height / graph_height))
 
-        # Déterminer l'indice de début en fonction de la valeur de la barre de défilement
         start_index = scrollbar_value
         end_index = start_index + visible_graphs
 
@@ -532,7 +490,8 @@ class bankfullJBDialog(QtWidgets.QDialog, FORM_CLASS):
                 profondeur_hydraulique = group_data["profondeur_hydraulique"].to_numpy()
                 ax.scatter(ref_altitude, profondeur_hydraulique, color="blue", s=4)
                 ax.set_title(
-                    f"Profondeur hydraulique en fonction de l'altitude (transect {group_name})",
+                    "Profondeur hydraulique en fonction"
+                    f" de l'altitude (transect {group_name})",
                     fontsize=11,
                 )
                 ax.set_xlabel("Altitude (m)", fontsize=11)
@@ -560,23 +519,22 @@ class bankfullJBDialog(QtWidgets.QDialog, FORM_CLASS):
         fin_intervalle = float(self.lineEdit_fin_intervalle.text())
         pas = float(self.lineEdit_pas.text())
         test_size = float(self.lineEdit_test_size.text())
-        # x_smooth_list, y_smooth_list = self.LissageCourbe(deb_intervalle, fin_intervalle, pas, test_size, prof_hydr)
         self.spline_results = LissageCourbe(
             deb_intervalle, fin_intervalle, pas, test_size, prof_hydr
         )
 
     # --------------------------------------------------------------------------------
-    # Méthode 1a de recherche du niveau de débordement : Amplitude de rupture de pente maximale
+    # Méthode 1a : Amplitude de rupture de pente maximale
     # --------------------------------------------------------------------------------
     def find_bankfull_max_amplitude(self):
-        bankfull_values_M1 = find_bankfull_M1(self.spline_results)
+        bankfull_values_M1 = find_bankfull_M1(self.spline_results, self.directory_path)
         print("Altitudes de débordement:", bankfull_values_M1)
 
     # --------------------------------------------------------------------------------
-    # Méthode 1b de recherche du niveau de débordement : Transects précédents
+    # Méthode 1b : Transects précédents
     # --------------------------------------------------------------------------------
     def find_banfkull_previous_transects(self):
-        bankfull_values_M2 = find_bankfull_M2(self.spline_results)
+        bankfull_values_M2 = find_bankfull_M2(self.spline_results, self.directory_path)
         print("Altitudes de débordement:", bankfull_values_M2)
 
     # --------------------------------------------------------------------------------
@@ -593,7 +551,8 @@ class bankfullJBDialog(QtWidgets.QDialog, FORM_CLASS):
         )
         self.transect_data = curve_Savitzky_Golay(curve_data, cross_section_data)
         print(
-            "Courbe de la courbure en fonction de la distance lissée avec succès par la méthode de Savitzky-Golay."
+            "Courbe de la courbure en fonction de "
+            "la distance lissée avec succès par la méthode de Savitzky-Golay."
         )
 
     # 2. Affichage des courbes lissées avec les divers pic sélectionnés
@@ -613,12 +572,11 @@ class bankfullJBDialog(QtWidgets.QDialog, FORM_CLASS):
         # Mettre à jour le graphique avec les données chargées
         scrollbar_value = self.horizontalSlider_pic_curve.value()
 
-        # Calcul du nombre de graphiques visibles en fonction de la hauteur de la fenêtre GraphicsView et de la hauteur d'un graphique
+        # Calcul du nombre de graphiques visibles
         view_height = self.graphicsView_pic_curve.height()
         graph_height = 410  # Hauteur approximative d'un graphique
         visible_graphs = max(1, int(view_height / graph_height))
 
-        # Déterminer l'indice de début en fonction de la valeur de la barre de défilement
         start_index = scrollbar_value
         end_index = start_index + visible_graphs
 
@@ -628,7 +586,6 @@ class bankfullJBDialog(QtWidgets.QDialog, FORM_CLASS):
         # Réinitialiser la liste des points annotés
         self.annotated_points = []
 
-        # Boucle sur les données de chaque transect dans all_transect_data pour créer les graphiques
         for transect_id, projected_distances, projected_altitudes in self.transect_data:
             # Vérifier si l'indice actuel est dans la plage visible
             if start_index <= transect_id < end_index:
@@ -693,13 +650,13 @@ class bankfullJBDialog(QtWidgets.QDialog, FORM_CLASS):
                     )
 
                 ax.set_title(
-                    f"Profil en travers avec altitude de débordement (transect {transect_id})",
+                    f"Profil en travers avec les points détectés (transect {transect_id})",
                     fontsize=11,
                 )
-                ax.set_xlabel("Distance")
-                ax.set_ylabel("Courbure")
+                ax.set_xlabel("Distance (m)")
+                ax.set_ylabel("Altitude (m)")
                 ax.legend()
-                ax.grid(True)
+                ax.grid(False)
                 plt.tight_layout()
 
                 # Ajout du graphique à la scène
@@ -716,7 +673,8 @@ class bankfullJBDialog(QtWidgets.QDialog, FORM_CLASS):
         if self.selected_points_data:  # Vérifie si des données ont été conservées
             self.exporter_dataframe_csv("selected_points_data.csv")
 
-    # 3. Choix de l'altitude de débordement avec sélection du point retenu par l'utilisateur pour chaque transect
+    # 3. Choix de l'altitude de débordement avec sélection
+    # du point retenu par l'utilisateur pour chaque transect
 
     def conserver_point(self):
         point_index_str = self.lineEdit_id_pt_conserver.text()
@@ -885,10 +843,8 @@ class bankfullJBDialog(QtWidgets.QDialog, FORM_CLASS):
         # Création de la scène
         scene = QtWidgets.QGraphicsScene()
 
-        # Liste pour stocker les résultats des intersections gauche et droite
-        pts_limites_results_list = []
-
-        # Boucle sur les groupes de données pour créer les graphiques uniquement pour les indices visibles
+        # Boucle sur les groupes de données pour créer
+        # les graphiques uniquement pour les indices visibles
         for group_name, group_data in cross_section_data.groupby("x_sec_id"):
             # Vérifier si l'indice actuel est dans la plage visible
             if start_index <= group_name < end_index:
@@ -994,13 +950,13 @@ class bankfullJBDialog(QtWidgets.QDialog, FORM_CLASS):
             ]["altitude"].values[0]
 
         for group_name, group_data in cross_section_data.groupby("x_sec_id"):
-            bankfull_altitude = alti_bankfull_dict[group_name]
+            # bankfull_altitude = alti_bankfull_dict[group_name]
             alti = group_data["POINT_Z"].to_numpy()
             distance = group_data["Distance"].to_numpy()
 
             # Trouver la berge la plus basse
-            river_center = group_data[group_data["RivCentre"] == True]
-            river_banks = group_data[group_data["RivCentre"] == False]
+            river_center = group_data[group_data["RivCentre"] is True]
+            river_banks = group_data[group_data["RivCentre"] is False]
             mean_altitude_before = river_banks[
                 river_banks["Distance"] < river_center.iloc[0]["Distance"]
             ]["POINT_Z"].mean()
