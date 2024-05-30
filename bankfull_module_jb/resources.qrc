@@ -1,0 +1,5 @@
+<RCC>
+    <qresource prefix="/plugins/bankfull_module_JB" >
+        <file>bankfull.png</file>
+    </qresource>
+</RCC>
