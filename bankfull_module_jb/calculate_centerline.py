@@ -70,14 +70,8 @@ def clean_centerline(centerline_gdf, crs, directory_path):
         and Point(line.coords[-1]) not in dangles
     ]
     merged_filtered_line = linemerge(filtered_lines)
-
-    # S'assurer que merged_filtered_line est une liste
-    if isinstance(merged_filtered_line, LineString):
-        merged_filtered_line = [merged_filtered_line]
-
-    merged_filtered_gdf = gpd.GeoDataFrame(geometry=merged_filtered_line)
-    merged_filtered_gdf.crs = crs
+    merged_filtered_gdf = gpd.GeoDataFrame({"geometry": [merged_filtered_line]}, crs=crs)
     output_shapefile_path = os.path.join(directory_path, "clean_centerline.shp")
     merged_filtered_gdf.to_file(output_shapefile_path, driver="ESRI Shapefile")
 
-    return (merged_filtered_gdf, output_shapefile_path)
+    return merged_filtered_gdf, output_shapefile_path

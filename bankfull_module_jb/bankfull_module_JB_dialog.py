@@ -32,6 +32,7 @@ import pyproj
 
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from PyQt5 import QtCore, QtWidgets
+from PyQt5.QtGui import QFont
 from qgis.gui import QgsFileWidget
 from qgis.PyQt import QtWidgets, uic
 from qgis.core import (
@@ -67,10 +68,29 @@ class bankfullJBDialog(QtWidgets.QDialog, FORM_CLASS):
         """Constructor."""
         super().__init__(parent)
         self.setupUi(self)
+
         self.update_MNT_layers()
         self.update_polygon_layers()
+
         self.comboBox_MNT.activated.connect(self.select_couche_MNT)
         self.comboBox_polygon.activated.connect(self.select_couche_polygon)
+
+        # Définir le texte par défaut
+        le_config = {
+            self.lineEdit_l_transect: "40",
+            self.lineEdit_e_transects: "30",
+            self.lineEdit_filtrage_aires: "0.1",
+            self.lineEdit_deb_intervalle: "0.01",
+            self.lineEdit_fin_intervalle: "0.5",
+            self.lineEdit_pas: "0.005",
+            self.lineEdit_test_size: "0.2",
+        }
+        for le, default_value in le_config.items():
+            le.setText(default_value)
+            le.setStyleSheet(f"color: #808080; font-style: italic;")
+            # Connecter les signaux de modification de texte
+            le.textChanged.connect(self.updateLineEdit)
+
         self.directory_path = None
         self.all_projected_distances = None
         self.all_projected_altitudes = None
@@ -96,19 +116,31 @@ class bankfullJBDialog(QtWidgets.QDialog, FORM_CLASS):
         self.pushButton_Exporter_donnees_curve.clicked.connect(
             self.export_donnees_curve
         )
-        self.pushButton_tracer_transects.clicked.connect(self.tracer_transects)
+        self.pushButton_CalculerAires.clicked.connect(self.calc_aires)
+        self.pushButton_CalculerProfHydr.clicked.connect(self.calc_prof_hydr)
         self.pushButton_Tracer_prof_hydr.clicked.connect(self.tracer_prof_hydr)
         self.pushButton_Lisser_courbes.clicked.connect(self.lissage_spline)
+        self.pushButton_tracer_transects.clicked.connect(self.tracer_transects)
+        self.radioButton_previous_transect.clicked.connect(
+            self.find_banfkull_previous_transects
+        )
+        self.radioButton_amplitude_max.clicked.connect(self.find_bankfull_max_amplitude)
         self.radioButton_prof_hydr_max_amplitude.clicked.connect(
             self.select_prof_hydr_max_amplitude
         )
         self.radioButton_prof_hydr_previous_transects.clicked.connect(
             self.select_prof_hydr_previous_transects
         )
-        self.pushButton_pic_curve.clicked.connect(self.pic_curve)
+        self.radioButton_curvature.clicked.connect(self.select_curvature)
         self.pushButton_tracer_pic_curve.clicked.connect(self.tracer_pic_curve)
+        self.pushButton_exporter_points_limite.clicked.connect(
+            self.exporter_points_limite
+        )
+        self.pushButton_calculer_coord_3D.clicked.connect(
+            self.call_coord_points_limites
+        )
+        self.pushButton_pic_curve.clicked.connect(self.pic_curve)
         self.pushButton_conserver_pt.clicked.connect(self.conserver_point)
-
         # --------------------------------------------------------------------------------
         # Initialisation des slider pour la visualisation dans les fenêtres graphiques
         # --------------------------------------------------------------------------------
@@ -119,35 +151,6 @@ class bankfullJBDialog(QtWidgets.QDialog, FORM_CLASS):
         self.horizontalSlider_pic_curve.valueChanged.connect(self.tracer_pic_curve)
         self.horizontalSlider_final_results.valueChanged.connect(
             self.visualize_final_results
-        )
-
-    # --------------------------------------------------------------------------------
-    # Connexions appropriées chaque fois que l'utilisateur change d'onglet
-    # --------------------------------------------------------------------------------
-    def on_tab_changed(self, index):
-        # self.pushButton_CalculerCenterline.clicked.connect(self.calc_centerline)
-        self.pushButton_CalculerTransects.clicked.connect(self.calc_transects)
-        self.pushButton_Exporter_donnees.clicked.connect(self.export_donnees)
-        self.pushButton_Exporter_donnees_curve.clicked.connect(
-            self.export_donnees_curve
-        )
-        self.pushButton_CalculerAires.clicked.connect(self.calc_aires)
-        self.pushButton_CalculerProfHydr.clicked.connect(self.calc_prof_hydr)
-        self.pushButton_Tracer_prof_hydr.clicked.connect(self.tracer_prof_hydr)
-        self.pushButton_Lisser_courbes.clicked.connect(self.lissage_spline)
-        self.pushButton_tracer_transects.clicked.connect(self.tracer_transects)
-        self.radioButton_previous_transect.clicked.connect(
-            self.find_banfkull_previous_transects
-        )
-        self.radioButton_amplitude_max.clicked.connect(self.find_bankfull_max_amplitude)
-        self.radioButton_curvature.clicked.connect(self.select_curvature)
-        self.pushButton_pic_curve.clicked.connect(self.pic_curve)
-        self.pushButton_tracer_pic_curve.clicked.connect(self.tracer_pic_curve)
-        self.pushButton_exporter_points_limite.clicked.connect(
-            self.exporter_points_limite
-        )
-        self.pushButton_calculer_coord_3D.clicked.connect(
-            self.call_coord_points_limites
         )
 
     # --------------------------------------------------------------------------------
@@ -167,6 +170,12 @@ class bankfullJBDialog(QtWidgets.QDialog, FORM_CLASS):
 
     def update_current_profile_label(self, value):
         self.sliders_label[self.sender()].setText(f"Profil actuel : {value}")
+
+    # --------------------------------------------------------------------------------
+    # Mise à jour des LineEdit
+    # --------------------------------------------------------------------------------
+    def updateLineEdit(self):
+        self.sender().setStyleSheet("color: black;")
 
     # --------------------------------------------------------------------------------
     # Import des couches (données de départ)
@@ -214,6 +223,7 @@ class bankfullJBDialog(QtWidgets.QDialog, FORM_CLASS):
 
         # Création d'une liste pour stocker les géométries Shapely
         geometries = []
+
         # Extraction des géométries de la couche polygonale
         for feature in vector_layer.getFeatures():
             geom = feature.geometry()
@@ -237,7 +247,7 @@ class bankfullJBDialog(QtWidgets.QDialog, FORM_CLASS):
                 print("La couche n'est pas valide.")
                 return
             QgsProject.instance().addMapLayer(layer)
-            print("Fichier clean_centerline.shp ajouté dans le projet avec succès")
+            print("Fichier clean_centerline.gpkg ajouté dans le projet avec succès")
         else:
             print("Géométrie vide")
 
@@ -245,6 +255,7 @@ class bankfullJBDialog(QtWidgets.QDialog, FORM_CLASS):
     # -Calcul des transects perpendiculairement à la ligne centrale
     # ----------------------------------------------------------------------------------
     def calc_transects(self):
+        # Récupération des valeurs pour le calcul
         transect_length = float(self.lineEdit_l_transect.text())
         transect_spacing = float(self.lineEdit_e_transects.text())
         CalculTransects(transect_length, transect_spacing, self.directory_path)
@@ -354,8 +365,11 @@ class bankfullJBDialog(QtWidgets.QDialog, FORM_CLASS):
                 fig, ax = plt.subplots()
                 altitude = group_data["POINT_Z"].to_numpy()
                 distance = group_data["Distance"].to_numpy()
-                ax.scatter(distance, altitude, color="blue", s=4)
-                ax.set_title(f"Profil en travers (transect {group_name})", fontsize=11)
+                ax.set_facecolor((0.56, 0.93, 0.56, 0.10))
+                ax.scatter(distance, altitude, color="black", s=2)
+                ax.set_title(
+                    f"Profil en travers n°{group_name}", fontsize=11, weight="bold"
+                )
                 ax.set_xlabel("Distance (m)", fontsize=11)
                 ax.set_ylabel("Altitude (m)", fontsize=11)
                 ax.grid(True)
@@ -483,16 +497,16 @@ class bankfullJBDialog(QtWidgets.QDialog, FORM_CLASS):
                 # Création d'un widget pour le graphique
                 graph_widget = QtWidgets.QWidget()
                 layout = QtWidgets.QVBoxLayout(graph_widget)
-
-                # Création du graphique matplotlib
+                # Création du graphique matplotlip
                 fig, ax = plt.subplots()
+                ax.set_facecolor((0.68, 0.85, 0.90, 0.10))
                 ref_altitude = group_data["ref_altitude"].to_numpy()
                 profondeur_hydraulique = group_data["profondeur_hydraulique"].to_numpy()
-                ax.scatter(ref_altitude, profondeur_hydraulique, color="blue", s=4)
+                ax.scatter(ref_altitude, profondeur_hydraulique, color="#236B8E", s=2)
                 ax.set_title(
-                    "Profondeur hydraulique en fonction"
-                    f" de l'altitude (transect {group_name})",
+                    "Profondeur hydraulique en fonction" f" de l'altitude",
                     fontsize=11,
+                    weight="bold",
                 )
                 ax.set_xlabel("Altitude (m)", fontsize=11)
                 ax.set_ylabel("Profondeur Hydraulique", fontsize=11)
@@ -595,6 +609,7 @@ class bankfullJBDialog(QtWidgets.QDialog, FORM_CLASS):
 
                 # Création du graphique matplotlib
                 fig, ax = plt.subplots(figsize=(8, 6))
+                ax.set_facecolor((0.85, 0.85, 0.85, 0.10))
                 alti = cross_section_data[
                     cross_section_data["x_sec_id"] == transect_id
                 ]["POINT_Z"].to_numpy()
@@ -602,9 +617,15 @@ class bankfullJBDialog(QtWidgets.QDialog, FORM_CLASS):
                     cross_section_data["x_sec_id"] == transect_id
                 ]["Distance"].to_numpy()
                 # Tracé de la courbe de courbure et des pics détectés
-                ax.plot(distance, alti, label="Profil en travers")
+                ax.plot(
+                    distance, alti, label="Profil en travers", zorder=1, color="#4F4F2F"
+                )
                 ax.scatter(
-                    projected_distances, projected_altitudes, color="purple", s=20
+                    projected_distances,
+                    projected_altitudes,
+                    color="red",
+                    s=20,
+                    zorder=2,
                 )
 
                 # Annoter chaque point avec un numéro unique
@@ -637,21 +658,22 @@ class bankfullJBDialog(QtWidgets.QDialog, FORM_CLASS):
                 if bankfull_m1.size > 0:
                     ax.axhline(
                         y=bankfull_m1[0],
-                        color="r",
-                        linestyle="--",
-                        label="Débordement M1",
+                        color="#E47833",
+                        linestyle="-.",
+                        label="Amplitude maximale",
                     )
                 if bankfull_m2.size > 0:
                     ax.axhline(
                         y=bankfull_m2[0],
-                        color="b",
+                        color="#99CC32",
                         linestyle="-.",
-                        label="Débordement M2",
+                        label="Profils précédents",
                     )
 
                 ax.set_title(
-                    f"Profil en travers avec les points détectés (transect {transect_id})",
+                    f"Profil en travers avec les points détectés",
                     fontsize=11,
+                    weight="bold",
                 )
                 ax.set_xlabel("Distance (m)")
                 ax.set_ylabel("Altitude (m)")
@@ -955,8 +977,8 @@ class bankfullJBDialog(QtWidgets.QDialog, FORM_CLASS):
             distance = group_data["Distance"].to_numpy()
 
             # Trouver la berge la plus basse
-            river_center = group_data[group_data["RivCentre"] is True]
-            river_banks = group_data[group_data["RivCentre"] is False]
+            river_center = group_data[group_data["RivCentre"] == True]
+            river_banks = group_data[group_data["RivCentre"] == False]
             mean_altitude_before = river_banks[
                 river_banks["Distance"] < river_center.iloc[0]["Distance"]
             ]["POINT_Z"].mean()
@@ -1184,15 +1206,14 @@ class bankfullJBDialog(QtWidgets.QDialog, FORM_CLASS):
         output_shapefile_path = os.path.join(self.directory_path, filename)
 
         # Créer une liste pour stocker les objets Point
-        geometries = []
+        geometries = [Point(x, y, z) for x, y, z in coords_3D_list]
 
-        # Parcourir la liste des coordonnées 3D
-        for point in coords_3D_list:
-            x, y, z = point
-            geometries.append(Point(x, y))
+        x_col, y_col, z_col = zip(*coords_3D_list)
 
         # Créer un GeoDataFrame à partir des objets Point
-        gdf = gpd.GeoDataFrame(geometry=geometries)
+        gdf = gpd.GeoDataFrame(
+            {"x": x_col, "y": y_col, "z": z_col, "geometry": geometries}
+        )
 
         # Définir le système de coordonnées de référence (SCR) EPSG:3948
         crs = {"init": "epsg:3948"}

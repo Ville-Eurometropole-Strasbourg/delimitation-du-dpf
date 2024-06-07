@@ -15,6 +15,7 @@ def nearest_points_RivCentre(centerline_layer, points_transects):
 
     nearest_point_index = None
     min_distance = float('inf')
+    nearest_points = []
     for i, point_coords in enumerate(points_transects):
         # Créer un objet QgsPoint à partir des coordonnées du point
         point = QgsPointXY(point_coords[0], point_coords[1])
@@ -34,7 +35,6 @@ def nearest_points_RivCentre(centerline_layer, points_transects):
     return nearest_point_index, nearest_points
 
 def echantillonner_mnt(transect, mnt, nb_pts):
-
     """
     Échantillonne le modèle numérique de terrain (MNT) le long du transect.
 
@@ -51,15 +51,14 @@ def echantillonner_mnt(transect, mnt, nb_pts):
     
     points_3d = [] # Stockage des coordonnées 3D
     pixelSizeX = mnt.rasterUnitsPerPixelX()
-    total_distance = transect.length()
     increment_distance = pixelSizeX
     for i in range(nb_pts):
         distance = i * increment_distance
         point = transect.interpolate(distance)
         x, y = point.asPoint()
-        if x < mnt.extent().xMinimum() or x > mnt.extent().xMaximum() or y < mnt.extent().yMinimum() or y > mnt.extent().yMaximum():
-            print("Point en dehors des limites du MNT :", (x, y))
-            continue
+        #if x < mnt.extent().xMinimum() or x > mnt.extent().xMaximum() or y < mnt.extent().yMinimum() or y > mnt.extent().yMaximum():
+            #print("Point en dehors des limites du MNT :", (x, y))
+
         # Lire l'altitude du MNT au point donné
         ident = mnt.dataProvider().identify(QgsPointXY(x, y), QgsRaster.IdentifyFormatValue)
         z = ident.results()[1]
