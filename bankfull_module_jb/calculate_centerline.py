@@ -2,7 +2,7 @@ import os
 
 import geopandas as gpd
 from centerline.geometry import Centerline
-from shapely.geometry import LineString, Point
+from shapely.geometry import LineString, Point, MultiLineString
 from shapely.ops import linemerge
 
 
@@ -31,7 +31,6 @@ def calculate_centerline(gdf):
     lines_number = len(centerline_gdf)
 
     return (centerline_gdf, lines_number)
-
 
 def clean_centerline(centerline_gdf, crs, directory_path):
     """
@@ -71,6 +70,7 @@ def clean_centerline(centerline_gdf, crs, directory_path):
     ]
     merged_filtered_line = linemerge(filtered_lines)
     merged_filtered_gdf = gpd.GeoDataFrame({"geometry": [merged_filtered_line]}, crs=crs)
+    
     output_shapefile_path = os.path.join(directory_path, "clean_centerline.shp")
     merged_filtered_gdf.to_file(output_shapefile_path, driver="ESRI Shapefile")
 

@@ -1,9 +1,9 @@
-import numpy as np
 import pyproj
 import geopandas as gpd
 from shapely.geometry import Point, LineString
 import os
 from qgis.core import QgsProject, QgsVectorLayer
+import numpy as np
 
 def get_angle(pt1, pt2):
     """Calcul d'un angle en degré entre deux points
@@ -49,9 +49,8 @@ def CalculTransects(transect_length, transect_spacing, directory_path):
     distance = transect_spacing
     tick_length = transect_length
 
-    layer = QgsProject.instance().mapLayersByName('clean_centerline')[0]
-    shapefile_path = layer.dataProvider().dataSourceUri()
-    gdf = gpd.read_file(shapefile_path)
+    layer = os.path.join(directory_path, "clean_centerline.gpkg")
+    gdf = gpd.read_file(layer)
 
     tick_lines = []
 
@@ -61,13 +60,14 @@ def CalculTransects(transect_length, transect_spacing, directory_path):
         current_dist = distance
         line_length = line.length
         list_points.append(Point(list(line.coords)[0]))
+
         while current_dist < line_length:
             list_points.append(line.interpolate(current_dist))
             current_dist += distance
         list_points.append(Point(list(line.coords)[-1]))
 
         for num, pt in enumerate(list_points, 1):
-            if num == 1:
+            if num == 0:
                 angle = get_angle(pt, list_points[num])
                 line_end_1 = get_point1(pt, angle, tick_length/2)
                 angle = get_angle(line_end_1, pt)
@@ -86,19 +86,19 @@ def CalculTransects(transect_length, transect_spacing, directory_path):
                 line_end_2 = get_point2(line_end_1, angle, tick_length)
                 tick_lines.append(LineString([(line_end_1.x, line_end_1.y), (line_end_2.x, line_end_2.y)]))
 
-    output_shapefile_path = os.path.join(directory_path, "transects_{}.shp".format(distance))
+    output_path = os.path.join(directory_path, "transects_{}.gpkg".format(distance))
     gdf_tick_lines = gpd.GeoDataFrame(geometry=tick_lines)
     gdf_tick_lines.crs = crs
-    gdf_tick_lines.to_file(output_shapefile_path, driver='ESRI Shapefile')
+    gdf_tick_lines.to_file(output_path, driver='GPKG')
 
     if not gdf_tick_lines.empty:
         try:
-            layer = QgsVectorLayer(output_shapefile_path, "transects", "ogr")
+            layer = QgsVectorLayer(output_path, "transects", "ogr")
             if not layer.isValid():
                 print("La couche n'est pas valide.")
                 return
             QgsProject.instance().addMapLayer(layer)
-            print("Fichier transects.shp ajouté dans le projet avec succès")
+            print("Fichier transects.gpkg ajouté dans le projet avec succès")
         except Exception as e:
             print("Erreur lors de l'ajout de la couche des transects au projet :", e)
     else:

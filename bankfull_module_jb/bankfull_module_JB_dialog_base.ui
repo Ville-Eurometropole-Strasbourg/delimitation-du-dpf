@@ -226,7 +226,7 @@
        <item row="15" column="1" colspan="4">
         <widget class="QSlider" name="horizontalSlider_visualisation_transects">
          <property name="maximum">
-          <number>50</number>
+          <number>100</number>
          </property>
          <property name="orientation">
           <enum>Qt::Horizontal</enum>
@@ -236,6 +236,13 @@
          </property>
          <property name="tickInterval">
           <number>0</number>
+         </property>
+        </widget>
+       </item>
+       <item row="3" column="3">
+        <widget class="QCheckBox" name="checkBox_inverser_centerline">
+         <property name="text">
+          <string>Inverser la ligne centrale </string>
          </property>
         </widget>
        </item>
@@ -291,7 +298,7 @@
           <enum>Qt::RightToLeft</enum>
          </property>
          <property name="maximum">
-          <number>50</number>
+          <number>100</number>
          </property>
          <property name="orientation">
           <enum>Qt::Horizontal</enum>
@@ -608,7 +615,7 @@
        <item row="5" column="0" colspan="3">
         <widget class="QSlider" name="horizontalSlider_pic_curve">
          <property name="maximum">
-          <number>50</number>
+          <number>100</number>
          </property>
          <property name="orientation">
           <enum>Qt::Horizontal</enum>
@@ -677,7 +684,7 @@
        <item row="5" column="0">
         <widget class="QSlider" name="horizontalSlider_final_results">
          <property name="maximum">
-          <number>50</number>
+          <number>100</number>
          </property>
          <property name="orientation">
           <enum>Qt::Horizontal</enum>

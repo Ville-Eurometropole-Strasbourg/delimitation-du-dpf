@@ -52,16 +52,15 @@ def echantillonner_mnt(transect, mnt, nb_pts):
     points_3d = [] # Stockage des coordonnées 3D
     pixelSizeX = mnt.rasterUnitsPerPixelX()
     increment_distance = pixelSizeX
+    
     for i in range(nb_pts):
         distance = i * increment_distance
         point = transect.interpolate(distance)
         x, y = point.asPoint()
-        #if x < mnt.extent().xMinimum() or x > mnt.extent().xMaximum() or y < mnt.extent().yMinimum() or y > mnt.extent().yMaximum():
-            #print("Point en dehors des limites du MNT :", (x, y))
-
         # Lire l'altitude du MNT au point donné
         ident = mnt.dataProvider().identify(QgsPointXY(x, y), QgsRaster.IdentifyFormatValue)
         z = ident.results()[1]
         # Ajout des coordonnées 3D à la liste
         points_3d.append((x, y, z))
+        
     return points_3d

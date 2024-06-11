@@ -29,6 +29,8 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import pyproj
+import pygeoops
+import fiona
 
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from PyQt5 import QtCore, QtWidgets
@@ -45,6 +47,7 @@ from qgis.core import (
     QgsWkbTypes,
 )
 from shapely.geometry import *
+from shapely.ops import linemerge
 from shapely.wkb import loads as load_wkb
 from scipy.interpolate import interp1d
 from .calcul_aires import calculer_aire
@@ -141,6 +144,7 @@ class bankfullJBDialog(QtWidgets.QDialog, FORM_CLASS):
         )
         self.pushButton_pic_curve.clicked.connect(self.pic_curve)
         self.pushButton_conserver_pt.clicked.connect(self.conserver_point)
+
         # --------------------------------------------------------------------------------
         # Initialisation des slider pour la visualisation dans les fenêtres graphiques
         # --------------------------------------------------------------------------------
@@ -215,34 +219,44 @@ class bankfullJBDialog(QtWidgets.QDialog, FORM_CLASS):
         """Calcul de la ligne centrale du cours d'eau
         :param checked: checked est "True" si le bouton est appuyé
         """
-        # Définition du système de coorodnnées
-        crs_epsg = 3948  # EPSG:3948
-        crs = pyproj.CRS.from_epsg(crs_epsg)
-        # Récupération de la couche polygonale sélectionnée
+        crs_epsg = "EPSG:3948"
+        crs = pyproj.CRS.from_epsg(int(crs_epsg.split(":")[1]))
         vector_layer = self.selected_polygon_layer
 
-        # Création d'une liste pour stocker les géométries Shapely
-        geometries = []
-
+        polygon = []
         # Extraction des géométries de la couche polygonale
         for feature in vector_layer.getFeatures():
             geom = feature.geometry()
             wkb = geom.asWkb()
             shapely_geom = load_wkb(bytes(wkb))
-            geometries.append(shapely_geom)
+            polygon.append(shapely_geom)
 
-        # Création du GeoDataFrame à partir des géométries Shapely
-        gdf = gpd.GeoDataFrame(geometry=geometries)
-        # Appel de la nouvelle fonction pour calculer la ligne centrale
-        centerline_gdf, lines_number = calculate_centerline(gdf)
-        # Nettoyage de la ligne centrale
-        merged_filtered_gdf, layer_path = clean_centerline(
-            centerline_gdf, crs, self.directory_path
+        centerline = pygeoops.centerline(
+            polygon, densify_distance=1, simplifytolerance=0.5
         )
-        if not merged_filtered_gdf.empty:
-            print("Export réussi:", layer_path)
+        print(centerline)
+
+        # Vérification de l'état de la case à cocher
+        if (
+            self.checkBox_inverser_centerline.isChecked()
+        ):  # Vérifie si la case est cochée
+            inverted_centerline = linemerge(centerline).coords[::-1]
+            gdf_centerline = gpd.GeoDataFrame(
+                {"geometry": [LineString(inverted_centerline)]}, crs=crs
+            )
+        else:
+            merged_centerline = linemerge(centerline)
+            gdf_centerline = gpd.GeoDataFrame(
+                {"geometry": [merged_centerline]}, crs=crs
+            )
+
+        output_path = os.path.join(self.directory_path, "clean_centerline.gpkg")
+        gdf_centerline.to_file(output_path, driver="GPKG")
+
+        if not gdf_centerline.empty:
+            print("Export réussi:", output_path)
             # Ajout de la couche directement au projet
-            layer = QgsVectorLayer(layer_path, "clean_centerline", "ogr")
+            layer = QgsVectorLayer(output_path, "clean_centerline", "ogr")
             if not layer.isValid():
                 print("La couche n'est pas valide.")
                 return
@@ -263,9 +277,34 @@ class bankfullJBDialog(QtWidgets.QDialog, FORM_CLASS):
     # ----------------------------------------------------------------------------------
     # - Projection des transects sur le MNT
     # ----------------------------------------------------------------------------------
+
     def projection_mnt(self):
-        transect_layer = QgsProject.instance().mapLayersByName("transects")[0]
-        centerline_layer = QgsProject.instance().mapLayersByName("clean_centerline")[0]
+
+        # Search for transects layers in the directory path
+        transect_layers = [
+            layer
+            for layer in QgsProject.instance().mapLayers().values()
+            if layer.name() == "transects"
+            and layer.source().startswith(self.directory_path)
+        ]
+
+        # Search for centerline layers in the directory path
+        centerline_layers = [
+            layer
+            for layer in QgsProject.instance().mapLayers().values()
+            if layer.name() == "clean_centerline"
+            and layer.source().startswith(self.directory_path)
+        ]
+
+        if not transect_layers or not centerline_layers:
+            print("Error: Layers not found in the specified directory")
+            return None
+
+        # Take the first layer found (assuming there's only one layer with the same name and path)
+        transect_layer = transect_layers[0]
+        centerline_layer = centerline_layers[0]
+
+        # Get the selected MNT layer
         mnt_layer = self.selected_MNT_layer
         pixelSizeX = mnt_layer.rasterUnitsPerPixelX()
 
@@ -277,10 +316,9 @@ class bankfullJBDialog(QtWidgets.QDialog, FORM_CLASS):
 
         points_transects = []
 
-        for feature in transect_layer.getFeatures():
+        for transect_num, feature in enumerate(transect_layer.getFeatures()):
             geom = feature.geometry()
             transect_points = echantillonner_mnt(geom, mnt_layer, nb_pts)
-            transect_num = feature.id()
             nearest_point_index, _ = nearest_points_RivCentre(
                 centerline_layer, transect_points
             )
@@ -299,7 +337,6 @@ class bankfullJBDialog(QtWidgets.QDialog, FORM_CLASS):
                     )
                 ]
             )
-
         # Création de la DataFrame df_transects à partir de la liste points_transects
         df_transects = pd.DataFrame(
             points_transects,
