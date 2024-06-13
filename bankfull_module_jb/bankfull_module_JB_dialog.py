@@ -49,12 +49,11 @@ from qgis.core import (
 from shapely.geometry import *
 from shapely.ops import linemerge
 from shapely.wkb import loads as load_wkb
-from scipy.interpolate import interp1d
+from scipy.interpolate import interp1d, make_interp_spline
+from scipy.signal import find_peaks
 from .calcul_aires import calculer_aire
 from .calcul_prof_hydr import CalculerProfHydr
-from .calculate_centerline import calculate_centerline, clean_centerline
 from .export_dataframe import export_data
-from .lissage_courbe import LissageCourbe
 from .lissage_savitzky_golay import curve_Savitzky_Golay
 from .prof_hydr_bankfull_methods import find_bankfull_M1, find_bankfull_M2
 from .projection_MNT import echantillonner_mnt, nearest_points_RivCentre
@@ -83,10 +82,6 @@ class bankfullJBDialog(QtWidgets.QDialog, FORM_CLASS):
             self.lineEdit_l_transect: "40",
             self.lineEdit_e_transects: "30",
             self.lineEdit_filtrage_aires: "0.1",
-            self.lineEdit_deb_intervalle: "0.01",
-            self.lineEdit_fin_intervalle: "0.5",
-            self.lineEdit_pas: "0.005",
-            self.lineEdit_test_size: "0.2",
         }
         for le, default_value in le_config.items():
             le.setText(default_value)
@@ -100,6 +95,8 @@ class bankfullJBDialog(QtWidgets.QDialog, FORM_CLASS):
         self.selected_points_data = []
         self.pts_limites_results_list = []
         self.coords_3D_list = []
+        self.spline_results = []
+        self.peaks_valleys_data = []
 
         self.sliders_label = {
             self.horizontalSlider_visualisation_transects: self.label_current_profile,
@@ -122,7 +119,6 @@ class bankfullJBDialog(QtWidgets.QDialog, FORM_CLASS):
         self.pushButton_CalculerAires.clicked.connect(self.calc_aires)
         self.pushButton_CalculerProfHydr.clicked.connect(self.calc_prof_hydr)
         self.pushButton_Tracer_prof_hydr.clicked.connect(self.tracer_prof_hydr)
-        self.pushButton_Lisser_courbes.clicked.connect(self.lissage_spline)
         self.pushButton_tracer_transects.clicked.connect(self.tracer_transects)
         self.radioButton_previous_transect.clicked.connect(
             self.find_banfkull_previous_transects
@@ -444,23 +440,22 @@ class bankfullJBDialog(QtWidgets.QDialog, FORM_CLASS):
 
         # Groupement des données par transect
         grouped_data = cross_section_data.groupby("x_sec_id")
-        # Initialiser une liste pour stocker les résultats par transect
+
         results_list = []
         # Stocker les résultats dans une liste de dictionnaires
         for x_sec_id, data_group in grouped_data:
-            # Supprimer les doublons d'altitudes par transect
+            # Suppression des doublons d'altitudes
             unique_data_group = data_group.drop_duplicates(subset=["POINT_Z"])
             unique_data_group.reset_index(drop=True, inplace=True)
 
-            # Récupérer les altitudes uniques après suppression des doublons ou triples
             alti = unique_data_group["POINT_Z"].values
             alti_ref = sorted(alti)
             dist = unique_data_group["Distance"].values
 
-            # Calculer les aires pour ce transect
+            # Calcul des aires du profil i
             areas_iteration = calculer_aire(dist, alti, alti_ref, filtrage_aires)
 
-            # Stocker les résultats dans une liste de dictionnaires
+            # Résultats dans une liste de dictionnaire
             for (
                 iteration,
                 areas,
@@ -500,19 +495,63 @@ class bankfullJBDialog(QtWidgets.QDialog, FORM_CLASS):
         largest_negative_area.to_csv(output_file, index=False)
         print("DataFrame exporté avec succès vers", output_file)
 
-    def tracer_prof_hydr(self):
+    def calcul_peaks_valleys(self):
+        prof_hydr_data = pd.read_csv(os.path.join(self.directory_path, "prof_hydr.csv"))
+        grouped_data = prof_hydr_data.groupby("x_sec_id")
+
+        self.spline_results = []
+        self.peaks_valleys_data = []
+
+        for idx, group_data in grouped_data:
+            ref_altitude = group_data["ref_altitude"].to_numpy()
+            profondeur_hydraulique = group_data["profondeur_hydraulique"].to_numpy()
+
+            # Smooth data using make_interp_spline
+            spline = make_interp_spline(ref_altitude, profondeur_hydraulique, k=1)
+            ref_altitude_smooth = np.linspace(
+                ref_altitude.min(), ref_altitude.max(), 100
+            )
+            profondeur_hydraulique_smooth = spline(ref_altitude_smooth)
+            self.spline_results.append(
+                (
+                    idx,
+                    ref_altitude_smooth.tolist(),
+                    profondeur_hydraulique_smooth.tolist(),
+                )
+            )
+
+            # Detect peaks and valleys (maximas and minimas)
+            peaks, _ = find_peaks(profondeur_hydraulique_smooth, distance=10)
+            valleys, _ = find_peaks(-profondeur_hydraulique_smooth, distance=10)
+
+            # Collect peaks and valleys data
+            for peak_index in peaks:
+                self.peaks_valleys_data.append(
+                    [
+                        idx,
+                        ref_altitude_smooth[peak_index],
+                        profondeur_hydraulique_smooth[peak_index],
+                        "Maximum local",
+                    ]
+                )
+            for valley_index in valleys:
+                self.peaks_valleys_data.append(
+                    [
+                        idx,
+                        ref_altitude_smooth[valley_index],
+                        profondeur_hydraulique_smooth[valley_index],
+                        "Minimum local",
+                    ]
+                )
+
+        return self.spline_results, self.peaks_valleys_data
+    
+    def tracer_prof_hydr(self) -> None:
         # Charger les données à partir du fichier CSV
         prof_hydr_data = pd.read_csv(os.path.join(self.directory_path, "prof_hydr.csv"))
+        spline_results, peaks_valleys_data = self.calcul_peaks_valleys()
 
-        # Vérifier si les données ont été chargées correctement
-        if prof_hydr_data is None:
-            print("Erreur lors de la lecture du fichier CSV.")
-            return
-
-        # Mettre à jour le graphique avec les données chargées
         scrollbar_value = self.verticalSlider_visualisation.value()
-
-        # Calcul du nombre de graphiques visibles
         view_height = self.graphicsView_prof_hydr.height()
         graph_height = 286  # Hauteur approximative d'un graphique
         visible_graphs = max(1, int(view_height / graph_height))
@@ -526,15 +565,11 @@ class bankfullJBDialog(QtWidgets.QDialog, FORM_CLASS):
         # Création de la scène
         scene = QtWidgets.QGraphicsScene()
 
-        # Boucle sur les groupes de données pour créer les graphiques uniquement pour les indices visibles
         for group_name, group_data in grouped_data:
-            # Vérifier si l'indice actuel est dans la plage visible
             if start_index <= group_name < end_index:
-                # print("Création du graphique pour le transect", group_name)
-                # Création d'un widget pour le graphique
                 graph_widget = QtWidgets.QWidget()
                 layout = QtWidgets.QVBoxLayout(graph_widget)
-                # Création du graphique matplotlip
+
                 fig, ax = plt.subplots()
                 ax.set_facecolor((0.68, 0.85, 0.90, 0.10))
                 ref_altitude = group_data["ref_altitude"].to_numpy()
@@ -548,6 +583,50 @@ class bankfullJBDialog(QtWidgets.QDialog, FORM_CLASS):
                 ax.set_xlabel("Altitude (m)", fontsize=11)
                 ax.set_ylabel("Profondeur Hydraulique", fontsize=11)
                 ax.grid(True)
+
+                # Find corresponding spline results
+                for result in spline_results:
+                    if result[0] == group_name:
+                        x_smooth = np.array(result[1])
+                        y_smooth = np.array(result[2])
+                        break
+
+                # Plot smoothed curve
+                ax.plot(
+                    x_smooth,
+                    y_smooth,
+                    linestyle="-",
+                    color="#236B8E",
+                )
+
+                # Plot peaks and valleys
+                peaks_indices = [
+                    idx
+                    for idx, data in enumerate(peaks_valleys_data)
+                    if data[0] == group_name and data[3] == "Maximum local"
+                ]
+                valleys_indices = [
+                    idx
+                    for idx, data in enumerate(peaks_valleys_data)
+                    if data[0] == group_name and data[3] == "Minimum local"
+                ]
+
+                ax.scatter(
+                    [peaks_valleys_data[idx][1] for idx in peaks_indices],
+                    [peaks_valleys_data[idx][2] for idx in peaks_indices],
+                    color="red",
+                    marker="o",
+                    label="Maximum local",
+                )
+                ax.scatter(
+                    [peaks_valleys_data[idx][1] for idx in valleys_indices],
+                    [peaks_valleys_data[idx][2] for idx in valleys_indices],
+                    color="blue",
+                    marker="o",
+                    label="Minimum local",
+                )
+
+                ax.legend()
                 plt.tight_layout()
 
                 # Ajout du graphique à la scène
@@ -560,33 +639,19 @@ class bankfullJBDialog(QtWidgets.QDialog, FORM_CLASS):
         self.graphicsView_prof_hydr.fitInView(
             scene.sceneRect(), QtCore.Qt.KeepAspectRatio
         )
-
-    # 2. Lissage de la courbe de profondeur hydraulique en fonction de la distance
-    def lissage_spline(self):
-        prof_hydr = pd.read_csv(
-            os.path.join(self.directory_path, "prof_hydr.csv"), sep=","
-        )
-        deb_intervalle = float(self.lineEdit_deb_intervalle.text())
-        fin_intervalle = float(self.lineEdit_fin_intervalle.text())
-        pas = float(self.lineEdit_pas.text())
-        test_size = float(self.lineEdit_test_size.text())
-        self.spline_results = LissageCourbe(
-            deb_intervalle, fin_intervalle, pas, test_size, prof_hydr
-        )
-
     # --------------------------------------------------------------------------------
     # Méthode 1a : Amplitude de rupture de pente maximale
     # --------------------------------------------------------------------------------
     def find_bankfull_max_amplitude(self):
-        bankfull_values_M1 = find_bankfull_M1(self.spline_results, self.directory_path)
-        print("Altitudes de débordement:", bankfull_values_M1)
+        find_bankfull_M1(self.spline_results, self.directory_path)
+        # print("Altitudes de débordement:", bankfull_values_M1)
 
     # --------------------------------------------------------------------------------
     # Méthode 1b : Transects précédents
     # --------------------------------------------------------------------------------
     def find_banfkull_previous_transects(self):
-        bankfull_values_M2 = find_bankfull_M2(self.spline_results, self.directory_path)
-        print("Altitudes de débordement:", bankfull_values_M2)
+        find_bankfull_M2(self.spline_results, self.directory_path)
+        # print("Altitudes de débordement:", bankfull_values_M2)
 
     # --------------------------------------------------------------------------------
     # Méthode 2 basée sur la courbure minimale du relief

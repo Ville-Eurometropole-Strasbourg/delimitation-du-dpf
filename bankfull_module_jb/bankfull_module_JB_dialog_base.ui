@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>681</width>
-    <height>902</height>
+    <width>720</width>
+    <height>835</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -253,8 +253,66 @@
        <string>Profondeur hydraulique</string>
       </attribute>
       <layout class="QGridLayout" name="gridLayout_3">
-       <item row="5" column="0" colspan="2">
-        <widget class="QLabel" name="label_20">
+       <item row="5" column="2">
+        <widget class="QLineEdit" name="lineEdit_filtrage_aires">
+         <property name="alignment">
+          <set>Qt::AlignCenter</set>
+         </property>
+        </widget>
+       </item>
+       <item row="13" column="0">
+        <widget class="QRadioButton" name="radioButton_previous_transect">
+         <property name="text">
+          <string>Transects précédents</string>
+         </property>
+        </widget>
+       </item>
+       <item row="12" column="0">
+        <widget class="QRadioButton" name="radioButton_amplitude_max">
+         <property name="text">
+          <string>Amplitude maximale de rupture de pente </string>
+         </property>
+        </widget>
+       </item>
+       <item row="11" column="0">
+        <widget class="QLabel" name="label_18">
+         <property name="font">
+          <font>
+           <family>Arial</family>
+           <pointsize>9</pointsize>
+           <underline>true</underline>
+          </font>
+         </property>
+         <property name="text">
+          <string>Méthodes pour le calcul de l'altitude de débordement</string>
+         </property>
+        </widget>
+       </item>
+       <item row="7" column="0" colspan="3">
+        <widget class="QLabel" name="label_15">
+         <property name="font">
+          <font>
+           <family>Arial</family>
+           <pointsize>9</pointsize>
+           <weight>50</weight>
+           <bold>false</bold>
+           <underline>true</underline>
+          </font>
+         </property>
+         <property name="text">
+          <string>Tracé de la profondeur hydraulique en fonction de l'altitude </string>
+         </property>
+        </widget>
+       </item>
+       <item row="5" column="3">
+        <widget class="QPushButton" name="pushButton_CalculerAires">
+         <property name="text">
+          <string>Calculer </string>
+         </property>
+        </widget>
+       </item>
+       <item row="6" column="0" colspan="3">
+        <widget class="QLabel" name="label_28">
          <property name="font">
           <font>
            <family>Arial</family>
@@ -262,33 +320,42 @@
            <weight>50</weight>
            <italic>false</italic>
            <bold>false</bold>
+           <underline>true</underline>
           </font>
          </property>
          <property name="text">
-          <string>Critère de filtrage des aires (m²) : </string>
+          <string>Calcul de la prodondeur hydraulique</string>
          </property>
         </widget>
        </item>
-       <item row="14" column="0">
-        <widget class="QLabel" name="label_23">
+       <item row="6" column="3">
+        <widget class="QPushButton" name="pushButton_CalculerProfHydr">
+         <property name="text">
+          <string>Calculer </string>
+         </property>
+        </widget>
+       </item>
+       <item row="10" column="0">
+        <widget class="QLabel" name="label_current_profile_2">
+         <property name="text">
+          <string/>
+         </property>
+        </widget>
+       </item>
+       <item row="3" column="0">
+        <widget class="QLabel" name="label_26">
          <property name="font">
           <font>
            <family>Arial</family>
            <pointsize>9</pointsize>
-           <weight>75</weight>
+           <weight>50</weight>
            <italic>false</italic>
-           <bold>true</bold>
+           <bold>false</bold>
+           <underline>true</underline>
           </font>
          </property>
          <property name="text">
-          <string>Ensemble de test : </string>
-         </property>
-        </widget>
-       </item>
-       <item row="13" column="3">
-        <widget class="QLineEdit" name="lineEdit_pas">
-         <property name="alignment">
-          <set>Qt::AlignCenter</set>
+          <string>Calcul de l'aire de la section mouillée</string>
          </property>
         </widget>
        </item>
@@ -314,98 +381,8 @@
          </property>
         </widget>
        </item>
-       <item row="5" column="3">
-        <widget class="QPushButton" name="pushButton_CalculerAires">
-         <property name="text">
-          <string>Calculer </string>
-         </property>
-        </widget>
-       </item>
-       <item row="17" column="0">
-        <widget class="QRadioButton" name="radioButton_previous_transect">
-         <property name="text">
-          <string>Transects précédents</string>
-         </property>
-        </widget>
-       </item>
-       <item row="15" column="0">
-        <widget class="QLabel" name="label_18">
-         <property name="font">
-          <font>
-           <family>Arial</family>
-           <pointsize>9</pointsize>
-           <underline>true</underline>
-          </font>
-         </property>
-         <property name="text">
-          <string>Choix de l'altitude de débordement</string>
-         </property>
-        </widget>
-       </item>
-       <item row="6" column="3">
-        <widget class="QPushButton" name="pushButton_CalculerProfHydr">
-         <property name="text">
-          <string>Calculer </string>
-         </property>
-        </widget>
-       </item>
-       <item row="7" column="3">
-        <widget class="QPushButton" name="pushButton_Tracer_prof_hydr">
-         <property name="text">
-          <string>Tracer</string>
-         </property>
-        </widget>
-       </item>
-       <item row="3" column="0">
-        <widget class="QLabel" name="label_26">
-         <property name="font">
-          <font>
-           <family>Arial</family>
-           <pointsize>9</pointsize>
-           <weight>50</weight>
-           <italic>false</italic>
-           <bold>false</bold>
-           <underline>true</underline>
-          </font>
-         </property>
-         <property name="text">
-          <string>Calcul de l'aire de la section mouillée</string>
-         </property>
-        </widget>
-       </item>
-       <item row="14" column="3" colspan="2">
-        <widget class="QPushButton" name="pushButton_Lisser_courbes">
-         <property name="text">
-          <string>Lisser</string>
-         </property>
-        </widget>
-       </item>
-       <item row="11" column="0" colspan="4">
-        <widget class="QLabel" name="label_32">
-         <property name="font">
-          <font>
-           <family>Arial</family>
-           <pointsize>9</pointsize>
-           <weight>50</weight>
-           <italic>false</italic>
-           <bold>false</bold>
-           <underline>true</underline>
-          </font>
-         </property>
-         <property name="text">
-          <string> Lissage de la courbe</string>
-         </property>
-        </widget>
-       </item>
-       <item row="16" column="0">
-        <widget class="QRadioButton" name="radioButton_amplitude_max">
-         <property name="text">
-          <string>Amplitude maximale de rupture de pente </string>
-         </property>
-        </widget>
-       </item>
-       <item row="13" column="0">
-        <widget class="QLabel" name="label_24">
+       <item row="5" column="0" colspan="2">
+        <widget class="QLabel" name="label_20">
          <property name="font">
           <font>
            <family>Arial</family>
@@ -416,63 +393,7 @@
           </font>
          </property>
          <property name="text">
-          <string>Borne inférieure / Borne supérieure / Pas :</string>
-         </property>
-        </widget>
-       </item>
-       <item row="12" column="0">
-        <widget class="QLabel" name="label_22">
-         <property name="font">
-          <font>
-           <family>Arial</family>
-           <pointsize>9</pointsize>
-           <weight>75</weight>
-           <italic>false</italic>
-           <bold>true</bold>
-          </font>
-         </property>
-         <property name="text">
-          <string>Valeurs de s à tester : </string>
-         </property>
-        </widget>
-       </item>
-       <item row="6" column="0" colspan="3">
-        <widget class="QLabel" name="label_28">
-         <property name="font">
-          <font>
-           <family>Arial</family>
-           <pointsize>9</pointsize>
-           <weight>50</weight>
-           <italic>false</italic>
-           <bold>false</bold>
-           <underline>true</underline>
-          </font>
-         </property>
-         <property name="text">
-          <string>Calcul de la prodondeur hydraulique</string>
-         </property>
-        </widget>
-       </item>
-       <item row="7" column="0" colspan="3">
-        <widget class="QLabel" name="label_15">
-         <property name="font">
-          <font>
-           <family>Arial</family>
-           <pointsize>9</pointsize>
-           <weight>50</weight>
-           <bold>false</bold>
-           <underline>true</underline>
-          </font>
-         </property>
-         <property name="text">
-          <string>Tracé de la profondeur hydraulique en fonction de l'altitude </string>
-         </property>
-        </widget>
-       </item>
-       <item row="14" column="1">
-        <widget class="QLineEdit" name="lineEdit_test_size">
-         <property name="alignment">
-          <set>Qt::AlignCenter</set>
+          <string>Critère de filtrage des aires (m²) : </string>
          </property>
         </widget>
        </item>
@@ -500,31 +421,10 @@
          </property>
         </widget>
        </item>
-       <item row="13" column="1">
-        <widget class="QLineEdit" name="lineEdit_deb_intervalle">
-         <property name="alignment">
-          <set>Qt::AlignCenter</set>
-         </property>
-        </widget>
-       </item>
-       <item row="13" column="2">
-        <widget class="QLineEdit" name="lineEdit_fin_intervalle">
-         <property name="alignment">
-          <set>Qt::AlignCenter</set>
-         </property>
-        </widget>
-       </item>
-       <item row="5" column="2">
-        <widget class="QLineEdit" name="lineEdit_filtrage_aires">
-         <property name="alignment">
-          <set>Qt::AlignCenter</set>
-         </property>
-        </widget>
-       </item>
-       <item row="10" column="0">
-        <widget class="QLabel" name="label_current_profile_2">
+       <item row="7" column="3">
+        <widget class="QPushButton" name="pushButton_Tracer_prof_hydr">
          <property name="text">
-          <string/>
+          <string>Tracer</string>
          </property>
         </widget>
        </item>
@@ -639,38 +539,10 @@
        <string>Visualisation des résultats</string>
       </attribute>
       <layout class="QGridLayout" name="gridLayout_5">
-       <item row="4" column="0">
-        <widget class="QGraphicsView" name="graphicsView_final_results">
-         <property name="enabled">
-          <bool>true</bool>
-         </property>
-        </widget>
-       </item>
-       <item row="11" column="0">
-        <widget class="QLabel" name="label_17">
-         <property name="text">
-          <string>Export des points limites au format .shp et ajout de la couche au projet</string>
-         </property>
-        </widget>
-       </item>
        <item row="9" column="0">
         <widget class="QPushButton" name="pushButton_calculer_coord_3D">
          <property name="text">
           <string>Calculer</string>
-         </property>
-        </widget>
-       </item>
-       <item row="1" column="0">
-        <widget class="QRadioButton" name="radioButton_prof_hydr_max_amplitude">
-         <property name="text">
-          <string>Profondeur hydraulique avec l'amplitude maximale</string>
-         </property>
-        </widget>
-       </item>
-       <item row="3" column="0">
-        <widget class="QRadioButton" name="radioButton_curvature">
-         <property name="text">
-          <string>Courbure du relief</string>
          </property>
         </widget>
        </item>
@@ -681,16 +553,13 @@
          </property>
         </widget>
        </item>
-       <item row="5" column="0">
-        <widget class="QSlider" name="horizontalSlider_final_results">
-         <property name="maximum">
-          <number>100</number>
-         </property>
+       <item row="15" column="0">
+        <widget class="QDialogButtonBox" name="buttonBox">
          <property name="orientation">
           <enum>Qt::Horizontal</enum>
          </property>
-         <property name="tickPosition">
-          <enum>QSlider::TicksAbove</enum>
+         <property name="standardButtons">
+          <set>QDialogButtonBox::Cancel|QDialogButtonBox::Ok</set>
          </property>
         </widget>
        </item>
@@ -698,23 +567,6 @@
         <widget class="QPushButton" name="pushButton_exporter_points_limite">
          <property name="text">
           <string>Exporter</string>
-         </property>
-        </widget>
-       </item>
-       <item row="7" column="0">
-        <widget class="QLabel" name="label_current_profile_4">
-         <property name="text">
-          <string/>
-         </property>
-        </widget>
-       </item>
-       <item row="13" column="0">
-        <widget class="QDialogButtonBox" name="buttonBox">
-         <property name="orientation">
-          <enum>Qt::Horizontal</enum>
-         </property>
-         <property name="standardButtons">
-          <set>QDialogButtonBox::Cancel|QDialogButtonBox::Ok</set>
          </property>
         </widget>
        </item>
@@ -736,6 +588,68 @@
         <widget class="QLabel" name="label_8">
          <property name="text">
           <string>Passage des coordonnées locales 2D aux coorodnnées 3D </string>
+         </property>
+        </widget>
+       </item>
+       <item row="11" column="0">
+        <widget class="QLabel" name="label_17">
+         <property name="text">
+          <string>Export des points limites au format .shp et ajout de la couche au projet</string>
+         </property>
+        </widget>
+       </item>
+       <item row="3" column="0">
+        <widget class="QRadioButton" name="radioButton_curvature">
+         <property name="text">
+          <string>Courbure du relief</string>
+         </property>
+        </widget>
+       </item>
+       <item row="1" column="0">
+        <widget class="QRadioButton" name="radioButton_prof_hydr_max_amplitude">
+         <property name="text">
+          <string>Profondeur hydraulique avec l'amplitude maximale</string>
+         </property>
+        </widget>
+       </item>
+       <item row="7" column="0">
+        <widget class="QLabel" name="label_current_profile_4">
+         <property name="text">
+          <string/>
+         </property>
+        </widget>
+       </item>
+       <item row="14" column="0">
+        <widget class="QPushButton" name="pushButton">
+         <property name="text">
+          <string>Tracer</string>
+         </property>
+        </widget>
+       </item>
+       <item row="4" column="0">
+        <widget class="QGraphicsView" name="graphicsView_final_results">
+         <property name="enabled">
+          <bool>true</bool>
+         </property>
+        </widget>
+       </item>
+       <item row="5" column="0">
+        <widget class="QSlider" name="horizontalSlider_final_results">
+         <property name="maximum">
+          <number>100</number>
+         </property>
+         <property name="orientation">
+          <enum>Qt::Horizontal</enum>
+         </property>
+         <property name="tickPosition">
+          <enum>QSlider::TicksAbove</enum>
+         </property>
+        </widget>
+       </item>
+       <item row="13" column="0">
+        <widget class="QLabel" name="label_9">
+         <property name="text">
+          <string>Création de la limite passant par les points</string>
          </property>
         </widget>
        </item>
