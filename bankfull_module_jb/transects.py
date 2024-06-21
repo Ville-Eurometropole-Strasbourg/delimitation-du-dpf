@@ -49,7 +49,7 @@ def CalculTransects(transect_length, transect_spacing, directory_path):
     distance = transect_spacing
     tick_length = transect_length
 
-    layer = os.path.join(directory_path, "clean_centerline.gpkg")
+    layer = os.path.join(directory_path, "ligne_centrale.gpkg")
     gdf = gpd.read_file(layer)
 
     tick_lines = []

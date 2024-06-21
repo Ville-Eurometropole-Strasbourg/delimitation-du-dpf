@@ -30,23 +30,18 @@ import numpy as np
 import pandas as pd
 import pyproj
 import pygeoops
-import fiona
 
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from PyQt5 import QtCore, QtWidgets
-from PyQt5.QtGui import QFont
 from qgis.gui import QgsFileWidget
-from qgis.PyQt import QtWidgets, uic
+from qgis.PyQt import uic
 from qgis.core import (
     QgsProject,
     QgsVectorLayer,
-    QgsPointXY,
-    QgsGeometry,
-    QgsMapLayer,
     QgsMapLayerType,
     QgsWkbTypes,
 )
-from shapely.geometry import *
+from shapely.geometry import Point, LineString
 from shapely.ops import linemerge
 from shapely.wkb import loads as load_wkb
 from scipy.interpolate import interp1d, make_interp_spline
@@ -56,7 +51,7 @@ from .calcul_prof_hydr import CalculerProfHydr
 from .export_dataframe import export_data
 from .lissage_savitzky_golay import curve_Savitzky_Golay
 from .prof_hydr_bankfull_methods import find_bankfull_M1, find_bankfull_M2
-from .projection_MNT import echantillonner_mnt, nearest_points_RivCentre
+from .echantillonner_MNT import ProjectionMNT
 from .transects import CalculTransects
 
 FORM_CLASS, _ = uic.loadUiType(
@@ -85,7 +80,7 @@ class bankfullJBDialog(QtWidgets.QDialog, FORM_CLASS):
         }
         for le, default_value in le_config.items():
             le.setText(default_value)
-            le.setStyleSheet(f"color: #808080; font-style: italic;")
+            le.setStyleSheet("color: #808080; font-style: italic;")
             # Connecter les signaux de modification de texte
             le.textChanged.connect(self.updateLineEdit)
 
@@ -217,11 +212,13 @@ class bankfullJBDialog(QtWidgets.QDialog, FORM_CLASS):
         """Calcul de la ligne centrale du cours d'eau
         :param checked: checked est "True" si le bouton est appuyé
         """
+        # Définition du système de coordonnées
         crs_epsg = "EPSG:3948"
         crs = pyproj.CRS.from_epsg(int(crs_epsg.split(":")[1]))
         vector_layer = self.selected_polygon_layer
 
         polygon = []
+
         # Extraction des géométries de la couche polygonale
         for feature in vector_layer.getFeatures():
             geom = feature.geometry()
@@ -229,31 +226,35 @@ class bankfullJBDialog(QtWidgets.QDialog, FORM_CLASS):
             shapely_geom = load_wkb(bytes(wkb))
             polygon.append(shapely_geom)
 
+        # Utilisation du package pygeoops pour le calcul de la ligne centrale.
+        # Paramètres densify_distance et simplifytolerance pour adapter la courbe
+        # en fonction de l'échelle et donc du système de coordonnées
+
         centerline = pygeoops.centerline(
             polygon, densify_distance=1, simplifytolerance=0.5
         )
         print(centerline)
 
         merged_centerline = linemerge(centerline)
-        
-        # Créer les GeoDataFrame pour la ligne centrale
-        gdf_centerline = gpd.GeoDataFrame({
-            "geometry": [merged_centerline],
-        }, crs=crs)
-
-        # Exporter la ligne centrale dans un fichier GPKG
-        output_path = os.path.join(self.directory_path, "clean_centerline.gpkg")
+        gdf_centerline = gpd.GeoDataFrame(
+            {
+                "geometry": [merged_centerline],
+            },
+            crs=crs,
+        )
+        # Export de la couche "ligne_centrale" dans un fichier GPKG
+        output_path = os.path.join(self.directory_path, "ligne_centrale.gpkg")
         gdf_centerline.to_file(output_path, driver="GPKG")
 
-        # Ajouter la ligne centrale au projet QGIS
+        # Ajout de la couche "ligne_centrale" au projet
         if not gdf_centerline.empty:
             print("Export réussi:", output_path)
-            layer = QgsVectorLayer(output_path, "clean_centerline", "ogr")
+            layer = QgsVectorLayer(output_path, "ligne_centrale", "ogr")
             if not layer.isValid():
                 print("La couche n'est pas valide.")
                 return
             QgsProject.instance().addMapLayer(layer)
-            print("Fichier clean_centerline.gpkg ajouté dans le projet avec succès")
+            print("Fichier ligne_centrale.gpkg ajouté dans le projet avec succès")
 
         else:
             print("Géométrie vide")
@@ -262,9 +263,9 @@ class bankfullJBDialog(QtWidgets.QDialog, FORM_CLASS):
     # -Calcul des transects perpendiculairement à la ligne centrale
     # ----------------------------------------------------------------------------------
     def calc_transects(self):
-        # Récupération des valeurs pour le calcul
-        transect_length = float(self.lineEdit_l_transect.text())
-        transect_spacing = float(self.lineEdit_e_transects.text())
+        # Récupération des valeurs des QLabel
+        transect_length = float(self.lineEdit_l_transect.text())  # longueur du profil
+        transect_spacing = float(self.lineEdit_e_transects.text())  # pas d'espacement
         CalculTransects(transect_length, transect_spacing, self.directory_path)
 
     # ----------------------------------------------------------------------------------
@@ -273,76 +274,26 @@ class bankfullJBDialog(QtWidgets.QDialog, FORM_CLASS):
 
     def projection_mnt(self):
 
-        # Search for transects layers in the directory path
         transect_layers = [
             layer
             for layer in QgsProject.instance().mapLayers().values()
             if layer.name() == "transects"
             and layer.source().startswith(self.directory_path)
         ]
-
-        # Search for centerline layers in the directory path
         centerline_layers = [
             layer
             for layer in QgsProject.instance().mapLayers().values()
-            if layer.name() == "clean_centerline"
+            if layer.name() == "ligne_centrale"
             and layer.source().startswith(self.directory_path)
         ]
-
-        if not transect_layers or not centerline_layers:
-            print("Error: Layers not found in the specified directory")
-            return None
-
-        # Take the first layer found
-        transect_layer = transect_layers[0]
-        centerline_layer = centerline_layers[0]
-
-        # Get the selected MNT layer
-        mnt_layer = self.selected_MNT_layer
-        pixelSizeX = mnt_layer.rasterUnitsPerPixelX()
-
-        # Calculer le nombre de points en fonction de la
-        # résolution et de la longueur des transects
-        length = float(self.lineEdit_l_transect.text())
-        nb_pts = int(length / pixelSizeX)
-        print("Nombre de points interpolés le long des transects  :", nb_pts)
-
-        points_transects = []
-
-        for transect_num, feature in enumerate(transect_layer.getFeatures()):
-            geom = feature.geometry()
-            transect_points = echantillonner_mnt(geom, mnt_layer, nb_pts)
-            nearest_point_index, _ = nearest_points_RivCentre(
-                centerline_layer, transect_points
-            )
-            # Création d'une liste contenant des booléens indiquant
-            # si chaque point est le plus proche de la ligne centrale
-            rivcentre_column = [
-                i == nearest_point_index for i in range(len(transect_points))
-            ]
-            # Ajout d'une colonne 'RivCentre' remplie de
-            # valeurs booléennes à la liste points_transects
-            points_transects.extend(
-                [
-                    (transect_num, i, point[0], point[1], point[2], is_nearest)
-                    for i, (point, is_nearest) in enumerate(
-                        zip(transect_points, rivcentre_column)
-                    )
-                ]
-            )
-        # Création de la DataFrame df_transects à partir de la liste points_transects
-        df_transects = pd.DataFrame(
-            points_transects,
-            columns=[
-                "x_sec_id",
-                "x_sec_order",
-                "POINT_X",
-                "POINT_Y",
-                "POINT_Z",
-                "RivCentre",
-            ],
+        transect_length = float(self.lineEdit_l_transect.text())  # longueur du profil
+        selected_MNT_layer = self.selected_MNT_layer
+        ProjectionMNT(
+            transect_layers,
+            centerline_layers,
+            transect_length,
+            selected_MNT_layer,
         )
-        return df_transects
 
     def export_donnees(self, checked: bool) -> None:
         df_transects = self.projection_mnt()
@@ -573,7 +524,7 @@ class bankfullJBDialog(QtWidgets.QDialog, FORM_CLASS):
                 profondeur_hydraulique = group_data["profondeur_hydraulique"].to_numpy()
                 ax.scatter(ref_altitude, profondeur_hydraulique, color="#236B8E", s=2)
                 ax.set_title(
-                    "Profondeur hydraulique en fonction" f" de l'altitude",
+                    f"Profondeur hydraulique en fonction" f" de l'altitude",
                     fontsize=11,
                     weight="bold",
                 )
@@ -770,7 +721,7 @@ class bankfullJBDialog(QtWidgets.QDialog, FORM_CLASS):
                     )
 
                 ax.set_title(
-                    f"Profil en travers avec les points détectés",
+                    "Profil en travers avec les points détectés",
                     fontsize=11,
                     weight="bold",
                 )
@@ -1096,22 +1047,34 @@ class bankfullJBDialog(QtWidgets.QDialog, FORM_CLASS):
 
                 # Trouver le premier point d'intersection à gauche
                 for i in range(len(distance) - 1, -1, -1):
-                    if distance[i] < river_center_distance and alti[i] >= selected_point_altitude:
+                    if (
+                        distance[i] < river_center_distance
+                        and alti[i] >= selected_point_altitude
+                    ):
                         left_intersection = (distance[i], selected_point_altitude)
                         break
 
                 # Trouver le premier point d'intersection à droite
                 for i in range(len(distance)):
-                    if distance[i] >= river_center_distance and alti[i] >= selected_point_altitude:
+                    if (
+                        distance[i] >= river_center_distance
+                        and alti[i] >= selected_point_altitude
+                    ):
                         right_intersection = (distance[i], selected_point_altitude)
                         break
 
                 # Vérifier et remplacer les intersections manquantes si nécessaire
                 if left_intersection is None and selected_bank == "gauche":
-                    left_intersection = (selected_point_distance, selected_point_altitude)
+                    left_intersection = (
+                        selected_point_distance,
+                        selected_point_altitude,
+                    )
 
                 if right_intersection is None and selected_bank == "droite":
-                    right_intersection = (selected_point_distance, selected_point_altitude)
+                    right_intersection = (
+                        selected_point_distance,
+                        selected_point_altitude,
+                    )
 
                 # Ajouter les résultats à la liste
                 self.pts_limites_results_list.append(
@@ -1199,12 +1162,11 @@ class bankfullJBDialog(QtWidgets.QDialog, FORM_CLASS):
 
         return self.pts_limites_results_list
 
-
     # créer une nouvelle liste pour exporter les point selectionne du fichier csv ?
 
-# --------------------------------------------------------------------------------------------------------
-# Calcul des points de la limite en fonction de la méthode retenue pour le choix du niveau de débordement
-# --------------------------------------------------------------------------------------------------------
+    # --------------------------------------------------------------------------------------------------------
+    # Calcul des points de la limite en fonction de la méthode retenue pour le choix du niveau de débordement
+    # --------------------------------------------------------------------------------------------------------
     def call_coord_points_limites(self):
         pts_limites_results_list = self.pts_limites_results_list
         self.coord_points_limites(pts_limites_results_list)

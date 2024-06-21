@@ -42,8 +42,8 @@ def find_bankfull_M1(spline_results: list, directory_path) -> list:
                         if amplitude > max_amplitude:
                             max_amplitude = amplitude
                             altitude_at_max_amplitude = ref_altitude_smooth[peak_index]
-                        
-                        # Ajouter toutes les amplitudes positives pour chaque transect
+      
+                        # Ajouter toutes les amplitudes pour chaque transect
                         if amplitude > 0:
                             amplitudes_for_this_transect.append(amplitude)
 
@@ -86,11 +86,11 @@ def find_bankfull_M2(spline_results: list, directory_path) -> list:
     for idx, ref_altitude_smooth, profondeur_hydraulique_smooth in spline_results:
         profondeur_hydraulique_smooth_np = np.array(profondeur_hydraulique_smooth)
         ref_altitude_smooth_np = np.array(ref_altitude_smooth)
-    
+
         # Trouver les maxima et minima de la profondeur hydraulique
         maxima_smooth, _ = find_peaks(profondeur_hydraulique_smooth_np, distance=1)
         minima_smooth, _ = find_peaks(-profondeur_hydraulique_smooth_np, distance=1)
-        
+
         if maxima_smooth.size > 0 and minima_smooth.size > 0:
             amplitudes_smooth = [
                 profondeur_hydraulique_smooth_np[max_index] - profondeur_hydraulique_smooth_np[min_index]
@@ -148,7 +148,7 @@ def find_bankfull_M2(spline_results: list, directory_path) -> list:
                     alti_bankfull = altitude_at_max_amplitude
                     # print(f"Transect {idx}: Amplitude sélectionnée (M2) = {amplitudes_smooth[closest_amplitude_index]}")
                     # print(f"Transect {idx}: Altitude correspondante = {alti_bankfull}")
-                    
+                 
             else:
                 alti_bankfull = None
         else:
