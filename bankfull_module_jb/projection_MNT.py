@@ -63,4 +63,7 @@ def echantillonner_mnt(transect, mnt, nb_pts):
         # Ajout des coordonnées 3D à la liste
         points_3d.append((x, y, z))
         
+    # Inverser la liste des points pour que le premier point soit à gauche
+    points_3d.reverse()
+    
     return points_3d

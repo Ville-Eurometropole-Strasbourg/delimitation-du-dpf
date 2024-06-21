@@ -59,12 +59,12 @@ def CalculTransects(transect_length, transect_spacing, directory_path):
         list_points = []
         current_dist = distance
         line_length = line.length
-        list_points.append(Point(list(line.coords)[0]))
+        list_points.append(Point(list(line.coords)[-1]))
 
         while current_dist < line_length:
-            list_points.append(line.interpolate(current_dist))
+            list_points.append(line.interpolate(line_length - current_dist))
             current_dist += distance
-        list_points.append(Point(list(line.coords)[-1]))
+        list_points.append(Point(list(line.coords)[0]))
 
         for num, pt in enumerate(list_points, 1):
             if num == 0:
@@ -86,8 +86,17 @@ def CalculTransects(transect_length, transect_spacing, directory_path):
                 line_end_2 = get_point2(line_end_1, angle, tick_length)
                 tick_lines.append(LineString([(line_end_1.x, line_end_1.y), (line_end_2.x, line_end_2.y)]))
 
+    # Inverser les tick_lines
+    tick_lines.reverse()
+
+    # Ajouter des attributs d'identifiant inversés aux lignes
+    tick_lines_with_ids = []
+    num_transects = len(tick_lines)
+    for i, line in enumerate(tick_lines):
+        tick_lines_with_ids.append({'geometry': line, 'id': num_transects - 1 - i})
+
     output_path = os.path.join(directory_path, "transects_{}.gpkg".format(distance))
-    gdf_tick_lines = gpd.GeoDataFrame(geometry=tick_lines)
+    gdf_tick_lines = gpd.GeoDataFrame(tick_lines_with_ids)
     gdf_tick_lines.crs = crs
     gdf_tick_lines.to_file(output_path, driver='GPKG')
 

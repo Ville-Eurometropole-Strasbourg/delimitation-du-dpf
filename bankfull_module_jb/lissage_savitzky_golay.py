@@ -1,4 +1,3 @@
-import pandas as pd
 import numpy as np
 from scipy.signal import savgol_filter
 from scipy.signal import find_peaks
@@ -98,8 +97,6 @@ def curve_Savitzky_Golay(curve_data, cross_section_data):
         projected_altitudes.extend(
             cross_section_group.loc[filtered_peaks_on_lowest_bank, "POINT_Z"]
         )
-        # print("Projected distances:", projected_distances)  # Afficher les distances projetées
-        # print("Projected altitudes:", projected_altitudes)  # Afficher les altitudes projetées
 
         all_transect_data.append((x_sec_id, projected_distances, projected_altitudes))
 

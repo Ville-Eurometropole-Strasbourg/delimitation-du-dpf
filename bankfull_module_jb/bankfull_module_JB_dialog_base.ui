@@ -239,13 +239,6 @@
          </property>
         </widget>
        </item>
-       <item row="3" column="3">
-        <widget class="QCheckBox" name="checkBox_inverser_centerline">
-         <property name="text">
-          <string>Inverser la ligne centrale </string>
-         </property>
-        </widget>
-       </item>
       </layout>
      </widget>
      <widget class="QWidget" name="tab_Prof_Hydraulique">
@@ -539,10 +532,20 @@
        <string>Visualisation des résultats</string>
       </attribute>
       <layout class="QGridLayout" name="gridLayout_5">
-       <item row="9" column="0">
-        <widget class="QPushButton" name="pushButton_calculer_coord_3D">
+       <item row="13" column="0">
+        <widget class="QDialogButtonBox" name="buttonBox">
+         <property name="orientation">
+          <enum>Qt::Horizontal</enum>
+         </property>
+         <property name="standardButtons">
+          <set>QDialogButtonBox::Cancel|QDialogButtonBox::Ok</set>
+         </property>
+        </widget>
+       </item>
+       <item row="11" column="0">
+        <widget class="QLabel" name="label_17">
          <property name="text">
-          <string>Calculer</string>
+          <string>Export de la limite dans le projet</string>
          </property>
         </widget>
        </item>
@@ -553,20 +556,44 @@
          </property>
         </widget>
        </item>
-       <item row="15" column="0">
-        <widget class="QDialogButtonBox" name="buttonBox">
-         <property name="orientation">
-          <enum>Qt::Horizontal</enum>
-         </property>
-         <property name="standardButtons">
-          <set>QDialogButtonBox::Cancel|QDialogButtonBox::Ok</set>
-         </property>
-        </widget>
-       </item>
        <item row="12" column="0">
         <widget class="QPushButton" name="pushButton_exporter_points_limite">
          <property name="text">
           <string>Exporter</string>
+         </property>
+        </widget>
+       </item>
+       <item row="8" column="0">
+        <widget class="QLabel" name="label_8">
+         <property name="text">
+          <string>Passage des coordonnées locales 2D aux coorodnnées 3D </string>
+         </property>
+        </widget>
+       </item>
+       <item row="5" column="0">
+        <widget class="QSlider" name="horizontalSlider_final_results">
+         <property name="maximum">
+          <number>100</number>
+         </property>
+         <property name="orientation">
+          <enum>Qt::Horizontal</enum>
+         </property>
+         <property name="tickPosition">
+          <enum>QSlider::TicksAbove</enum>
+         </property>
+        </widget>
+       </item>
+       <item row="9" column="0">
+        <widget class="QPushButton" name="pushButton_calculer_coord_3D">
+         <property name="text">
+          <string>Calculer</string>
+         </property>
+        </widget>
+       </item>
+       <item row="1" column="0">
+        <widget class="QRadioButton" name="radioButton_prof_hydr_max_amplitude">
+         <property name="text">
+          <string>Profondeur hydraulique avec l'amplitude maximale</string>
          </property>
         </widget>
        </item>
@@ -584,17 +611,10 @@
          </property>
         </widget>
        </item>
-       <item row="8" column="0">
-        <widget class="QLabel" name="label_8">
+       <item row="7" column="0">
+        <widget class="QLabel" name="label_current_profile_4">
          <property name="text">
-          <string>Passage des coordonnées locales 2D aux coorodnnées 3D </string>
-         </property>
-        </widget>
-       </item>
-       <item row="11" column="0">
-        <widget class="QLabel" name="label_17">
-         <property name="text">
-          <string>Export des points limites au format .shp et ajout de la couche au projet</string>
+          <string/>
          </property>
         </widget>
        </item>
@@ -605,51 +625,10 @@
          </property>
         </widget>
        </item>
-       <item row="1" column="0">
-        <widget class="QRadioButton" name="radioButton_prof_hydr_max_amplitude">
-         <property name="text">
-          <string>Profondeur hydraulique avec l'amplitude maximale</string>
-         </property>
-        </widget>
-       </item>
-       <item row="7" column="0">
-        <widget class="QLabel" name="label_current_profile_4">
-         <property name="text">
-          <string/>
-         </property>
-        </widget>
-       </item>
-       <item row="14" column="0">
-        <widget class="QPushButton" name="pushButton">
-         <property name="text">
-          <string>Tracer</string>
-         </property>
-        </widget>
-       </item>
        <item row="4" column="0">
         <widget class="QGraphicsView" name="graphicsView_final_results">
          <property name="enabled">
           <bool>true</bool>
-         </property>
-        </widget>
-       </item>
-       <item row="5" column="0">
-        <widget class="QSlider" name="horizontalSlider_final_results">
-         <property name="maximum">
-          <number>100</number>
-         </property>
-         <property name="orientation">
-          <enum>Qt::Horizontal</enum>
-         </property>
-         <property name="tickPosition">
-          <enum>QSlider::TicksAbove</enum>
-         </property>
-        </widget>
-       </item>
-       <item row="13" column="0">
-        <widget class="QLabel" name="label_9">
-         <property name="text">
-          <string>Création de la limite passant par les points</string>
          </property>
         </widget>
        </item>
