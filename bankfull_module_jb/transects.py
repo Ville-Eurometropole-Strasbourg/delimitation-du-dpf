@@ -1,6 +1,7 @@
 import pyproj
 import geopandas as gpd
 from shapely.geometry import Point, LineString
+from shapely import reverse
 import os
 from qgis.core import QgsProject, QgsVectorLayer
 import numpy as np
@@ -65,6 +66,7 @@ def CalculTransects(transect_length, transect_spacing, directory_path):
             list_points.append(line.interpolate(line_length - current_dist))
             current_dist += distance
         list_points.append(Point(list(line.coords)[0]))
+        list_points.reverse()
 
         for num, pt in enumerate(list_points, 1):
             if num == 0:
@@ -86,7 +88,7 @@ def CalculTransects(transect_length, transect_spacing, directory_path):
                 line_end_2 = get_point2(line_end_1, angle, tick_length)
                 tick_lines.append(LineString([(line_end_1.x, line_end_1.y), (line_end_2.x, line_end_2.y)]))
 
-    # Inverser les tick_lines
+    # Inverser les tick_lines pour correspondre à la numérotation inversée
     tick_lines.reverse()
 
     # Ajouter des attributs d'identifiant inversés aux lignes

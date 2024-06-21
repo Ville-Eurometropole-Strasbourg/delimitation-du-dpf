@@ -42,6 +42,7 @@ from qgis.core import (
     QgsWkbTypes,
 )
 from shapely.geometry import Point, LineString
+from shapely import reverse
 from shapely.ops import linemerge
 from shapely.wkb import loads as load_wkb
 from scipy.interpolate import interp1d, make_interp_spline
@@ -233,15 +234,16 @@ class bankfullJBDialog(QtWidgets.QDialog, FORM_CLASS):
         centerline = pygeoops.centerline(
             polygon, densify_distance=1, simplifytolerance=0.5
         )
-        print(centerline)
 
-        merged_centerline = linemerge(centerline)
+        merged_centerline = reverse(linemerge(centerline))
+        
         gdf_centerline = gpd.GeoDataFrame(
             {
                 "geometry": [merged_centerline],
             },
             crs=crs,
         )
+
         # Export de la couche "ligne_centrale" dans un fichier GPKG
         output_path = os.path.join(self.directory_path, "ligne_centrale.gpkg")
         gdf_centerline.to_file(output_path, driver="GPKG")
@@ -288,12 +290,14 @@ class bankfullJBDialog(QtWidgets.QDialog, FORM_CLASS):
         ]
         transect_length = float(self.lineEdit_l_transect.text())  # longueur du profil
         selected_MNT_layer = self.selected_MNT_layer
-        ProjectionMNT(
+        df_transects = ProjectionMNT(
             transect_layers,
             centerline_layers,
             transect_length,
             selected_MNT_layer,
         )
+        print("df_transects from projection_mnt:", df_transects)
+        return df_transects
 
     def export_donnees(self, checked: bool) -> None:
         df_transects = self.projection_mnt()
