@@ -78,6 +78,8 @@ class bankfullJBDialog(QtWidgets.QDialog, FORM_CLASS):
             self.lineEdit_l_transect: "40",
             self.lineEdit_e_transects: "30",
             self.lineEdit_filtrage_aires: "0.1",
+            self.lineEdit_interp_nb_pts: "500",
+            self.lineEdit_dist_max_min: "10",
         }
         for le, default_value in le_config.items():
             le.setText(default_value)
@@ -88,6 +90,7 @@ class bankfullJBDialog(QtWidgets.QDialog, FORM_CLASS):
         self.directory_path = None
         self.all_projected_distances = None
         self.all_projected_altitudes = None
+        self.dist_pic = None
         self.selected_points_data = []
         self.pts_limites_results_list = []
         self.coords_3D_list = []
@@ -236,7 +239,9 @@ class bankfullJBDialog(QtWidgets.QDialog, FORM_CLASS):
         )
 
         merged_centerline = reverse(linemerge(centerline))
-        
+        line_length = merged_centerline.length
+        print(f"La longueur de la ligne est : {line_length}m")
+
         gdf_centerline = gpd.GeoDataFrame(
             {
                 "geometry": [merged_centerline],
@@ -449,6 +454,8 @@ class bankfullJBDialog(QtWidgets.QDialog, FORM_CLASS):
 
     def calcul_peaks_valleys(self):
         prof_hydr_data = pd.read_csv(os.path.join(self.directory_path, "prof_hydr.csv"))
+        dist_pic = int(float(self.lineEdit_dist_max_min.text()))
+        pts_interp = int(float(self.lineEdit_interp_nb_pts.text()))
         grouped_data = prof_hydr_data.groupby("x_sec_id")
 
         self.spline_results = []
@@ -461,7 +468,7 @@ class bankfullJBDialog(QtWidgets.QDialog, FORM_CLASS):
             # Smooth data using make_interp_spline
             spline = make_interp_spline(ref_altitude, profondeur_hydraulique, k=1)
             ref_altitude_smooth = np.linspace(
-                ref_altitude.min(), ref_altitude.max(), 100
+                ref_altitude.min(), ref_altitude.max(), pts_interp
             )
             profondeur_hydraulique_smooth = spline(ref_altitude_smooth)
             self.spline_results.append(
@@ -473,8 +480,8 @@ class bankfullJBDialog(QtWidgets.QDialog, FORM_CLASS):
             )
 
             # Detect peaks and valleys (maximas and minimas)
-            peaks, _ = find_peaks(profondeur_hydraulique_smooth, distance=10)
-            valleys, _ = find_peaks(-profondeur_hydraulique_smooth, distance=10)
+            peaks, _ = find_peaks(profondeur_hydraulique_smooth, distance=dist_pic, prominence=0.001)
+            valleys, _ = find_peaks(-profondeur_hydraulique_smooth, distance=dist_pic, prominence=0.001)
 
             # Collect peaks and valleys data
             for peak_index in peaks:
@@ -530,7 +537,6 @@ class bankfullJBDialog(QtWidgets.QDialog, FORM_CLASS):
                 ax.set_title(
                     f"Profondeur hydraulique en fonction" f" de l'altitude",
                     fontsize=11,
-                    weight="bold",
                 )
                 ax.set_xlabel("Altitude (m)", fontsize=11)
                 ax.set_ylabel("Profondeur Hydraulique", fontsize=11)
@@ -596,14 +602,14 @@ class bankfullJBDialog(QtWidgets.QDialog, FORM_CLASS):
     # Méthode 1a : Amplitude de rupture de pente maximale
     # --------------------------------------------------------------------------------
     def find_bankfull_max_amplitude(self):
-        find_bankfull_M1(self.spline_results, self.directory_path)
+        find_bankfull_M1(self.spline_results, self.directory_path, self.dist_pic)
         # print("Altitudes de débordement:", bankfull_values_M1)
 
     # --------------------------------------------------------------------------------
     # Méthode 1b : Transects précédents
     # --------------------------------------------------------------------------------
     def find_banfkull_previous_transects(self):
-        find_bankfull_M2(self.spline_results, self.directory_path)
+        find_bankfull_M2(self.spline_results, self.directory_path, self.dist_pic)
         # print("Altitudes de débordement:", bankfull_values_M2)
 
     # --------------------------------------------------------------------------------
@@ -727,12 +733,11 @@ class bankfullJBDialog(QtWidgets.QDialog, FORM_CLASS):
                 ax.set_title(
                     "Profil en travers avec les points détectés",
                     fontsize=11,
-                    weight="bold",
                 )
                 ax.set_xlabel("Distance (m)")
                 ax.set_ylabel("Altitude (m)")
                 ax.legend()
-                ax.grid(False)
+                ax.grid(True)
                 plt.tight_layout()
 
                 # Ajout du graphique à la scène
@@ -939,7 +944,7 @@ class bankfullJBDialog(QtWidgets.QDialog, FORM_CLASS):
                 )
                 ax.set_xlabel("Distance (m)", fontsize=11)
                 ax.set_ylabel("Altitude (m)", fontsize=11)
-                ax.grid(False)
+                ax.grid(True)
 
                 # Tracer la droite d'altitude de débordement
                 ax.axhline(
@@ -1045,40 +1050,56 @@ class bankfullJBDialog(QtWidgets.QDialog, FORM_CLASS):
                 else:
                     selected_bank = "droite"
 
-                # Calculer les points d'intersection
+                # Calculer les points d'intersection sur l'autre berge
+                other_bank_intersection = None
+
+                if selected_bank == "gauche":
+                    # Trouver le premier point d'intersection à droite
+                    for i in range(len(distance)):
+                        if (
+                            distance[i] >= river_center_distance
+                            and alti[i] >= selected_point_altitude
+                        ):
+                            other_bank_intersection = (
+                                distance[i],
+                                selected_point_altitude,
+                            )
+                            break
+                else:
+                    # Trouver le premier point d'intersection à gauche
+                    for i in range(len(distance) - 1, -1, -1):
+                        if (
+                            distance[i] < river_center_distance
+                            and alti[i] >= selected_point_altitude
+                        ):
+                            other_bank_intersection = (
+                                distance[i],
+                                selected_point_altitude,
+                            )
+                            break
+
+                # Ajouter les résultats à la liste avec le point conservé et l'intersection sur l'autre berge
+                # self.pts_limites_results_list.append(
+                # (group_name, (selected_point_distance, selected_point_altitude), other_bank_intersection)
+                # )
                 left_intersection = None
                 right_intersection = None
 
-                # Trouver le premier point d'intersection à gauche
-                for i in range(len(distance) - 1, -1, -1):
-                    if (
-                        distance[i] < river_center_distance
-                        and alti[i] >= selected_point_altitude
-                    ):
-                        left_intersection = (distance[i], selected_point_altitude)
-                        break
-
-                # Trouver le premier point d'intersection à droite
-                for i in range(len(distance)):
-                    if (
-                        distance[i] >= river_center_distance
-                        and alti[i] >= selected_point_altitude
-                    ):
-                        right_intersection = (distance[i], selected_point_altitude)
-                        break
-
-                # Vérifier et remplacer les intersections manquantes si nécessaire
-                if left_intersection is None and selected_bank == "gauche":
+                if selected_point_distance < river_center_distance:
                     left_intersection = (
                         selected_point_distance,
                         selected_point_altitude,
                     )
-
-                if right_intersection is None and selected_bank == "droite":
+                else:
                     right_intersection = (
                         selected_point_distance,
                         selected_point_altitude,
                     )
+
+                if selected_bank == "gauche" and other_bank_intersection:
+                    right_intersection = other_bank_intersection
+                elif selected_bank == "droite" and other_bank_intersection:
+                    left_intersection = other_bank_intersection
 
                 # Ajouter les résultats à la liste
                 self.pts_limites_results_list.append(
@@ -1117,29 +1138,32 @@ class bankfullJBDialog(QtWidgets.QDialog, FORM_CLASS):
                         y=selected_point["altitude"].iloc[0],
                         color="red",
                         linestyle="--",
-                        label=f'Altitude: {selected_point["altitude"].iloc[0]}',
+                        label=f'Altitude conservé: {selected_point["altitude"].iloc[0]}',
                     )
 
                     # Tracer les points d'intersection
                     for result in self.pts_limites_results_list:
                         if result[0] == group_name:
-                            left_intersection = result[1]
-                            right_intersection = result[2]
-                            if left_intersection:
+                            conserved_point = result[1]
+                            other_bank_intersection = result[2]
+                            if conserved_point and conserved_point != (
+                                selected_point["distance"].iloc[0],
+                                selected_point["altitude"].iloc[0],
+                            ):
                                 ax.scatter(
-                                    left_intersection[0],
-                                    left_intersection[1],
+                                    conserved_point[0],
+                                    conserved_point[1],
+                                    color="red",
+                                    s=40,
+                                    label="Point conservé",
+                                )
+                            if other_bank_intersection:
+                                ax.scatter(
+                                    other_bank_intersection[0],
+                                    other_bank_intersection[1],
                                     color="blue",
                                     s=40,
-                                    label="Intersection gauche",
-                                )
-                            if right_intersection:
-                                ax.scatter(
-                                    right_intersection[0],
-                                    right_intersection[1],
-                                    color="green",
-                                    s=40,
-                                    label="Intersection droite",
+                                    label="Intersection autre berge",
                                 )
 
                 ax.set_title(
@@ -1217,7 +1241,7 @@ class bankfullJBDialog(QtWidgets.QDialog, FORM_CLASS):
                 left_x, left_y = interpolate_coords(
                     left_distance, distances, x_coords, y_coords
                 )
-                self.coords_3D_left_list.append((left_x, left_y, left_altitude))
+                self.coords_3D_left_list.append((transect_id, left_x, left_y, left_altitude))
 
         print("Points limites gauche (nouveaux):", self.coords_3D_left_list)
         print("Points limites droite (nouveaux):", self.coords_3D_right_list)
@@ -1239,13 +1263,13 @@ class bankfullJBDialog(QtWidgets.QDialog, FORM_CLASS):
 
     def export_points_to_shapefile(self, coords_3D_list, filename):
         output_shapefile_path = os.path.join(self.directory_path, filename)
-        geometries = [Point(x, y, z) for x, y, z in coords_3D_list]
-        x_col, y_col, z_col = zip(*coords_3D_list)
+        geometries = [Point(x, y, z) for _, x, y, z in coords_3D_list]  # Change here
+        transect_id, x_col, y_col, z_col = zip(*[(transect_id, x, y, z) for transect_id, x, y, z in coords_3D_list])
         gdf = gpd.GeoDataFrame(
-            {"x": x_col, "y": y_col, "z": z_col, "geometry": geometries}
+            {"id": transect_id, "x": x_col, "y": y_col, "z": z_col, "geometry": geometries}
         )
         crs = {"init": "epsg:3948"}
-        gdf.to_file(output_shapefile_path, crs=crs, geometry="Point")
+        gdf.to_file(output_shapefile_path, crs=crs, geometry="geometry")
         print(f"Fichier Shapefile exporté avec succès : {output_shapefile_path}")
 
         layer = QgsVectorLayer(
@@ -1258,6 +1282,7 @@ class bankfullJBDialog(QtWidgets.QDialog, FORM_CLASS):
             print(
                 f"Couche {os.path.splitext(filename)[0]} ajoutée au projet avec succès"
             )
+
 
     def export_points_limite_prof_hydr_max_amplitude(self):
         left_filename = "points_limite_prof_hydr_max_amplitude_left"

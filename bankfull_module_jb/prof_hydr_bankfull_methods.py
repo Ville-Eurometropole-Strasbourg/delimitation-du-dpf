@@ -4,7 +4,7 @@ import pandas as pd
 from scipy.signal import find_peaks
 
 
-def find_bankfull_M1(spline_results: list, directory_path) -> list:
+def find_bankfull_M1(spline_results: list, directory_path, dist_pic) -> list:
     """
     Trouve l'altitude maximale de débordement pour chaque transect et affiche les amplitudes positives pour chaque transect.
     :param spline_results: Liste de tuples (group_name, ref_altitude_smooth, profondeur_hydraulique_smooth) représentant
@@ -14,7 +14,7 @@ def find_bankfull_M1(spline_results: list, directory_path) -> list:
         de débordement pour ce transect.
     """
     altitude_max_amplitudes = []
-    amplitudes_per_transect = {}  # Dictionnaire pour stocker les amplitudes par transect
+    amplitudes_per_transect = {}  # Dictionnaire pour stocker les amplitudes par profil
 
     for (
         idx,
@@ -24,8 +24,8 @@ def find_bankfull_M1(spline_results: list, directory_path) -> list:
 
         profondeur_hydraulique_smooth_array = np.array(profondeur_hydraulique_smooth)
 
-        peaks, _ = find_peaks(profondeur_hydraulique_smooth_array, distance=10)
-        valleys, _ = find_peaks(-profondeur_hydraulique_smooth_array, distance=10)
+        peaks, _ = find_peaks(profondeur_hydraulique_smooth_array, distance=dist_pic, prominence=0.001)
+        valleys, _ = find_peaks(-profondeur_hydraulique_smooth_array, distance=dist_pic, prominence=0.001)
 
         if peaks.any() and valleys.any():
             altitude_at_max_amplitude = None
@@ -42,10 +42,11 @@ def find_bankfull_M1(spline_results: list, directory_path) -> list:
                         if amplitude > max_amplitude:
                             max_amplitude = amplitude
                             altitude_at_max_amplitude = ref_altitude_smooth[peak_index]
-      
+
                         # Ajouter toutes les amplitudes pour chaque transect
-                        if amplitude > 0:
-                            amplitudes_for_this_transect.append(amplitude)
+                        if amplitude is not None:
+                            # amplitudes_for_this_transect.append(amplitude)
+                            amplitudes_for_this_transect.append(abs(amplitude))
 
             if amplitudes_for_this_transect:
                 amplitudes_per_transect[idx] = amplitudes_for_this_transect
@@ -66,10 +67,10 @@ def find_bankfull_M1(spline_results: list, directory_path) -> list:
     for transect, amplitudes in amplitudes_per_transect.items():
         print(f"Transect {transect} - Amplitudes: {amplitudes}")
 
-    return altitude_max_amplitudes
+    return altitude_max_amplitudes, amplitudes_per_transect
 
 
-def find_bankfull_M2(spline_results: list, directory_path) -> list:
+def find_bankfull_M2(spline_results: list, directory_path, dist_pic) -> list:
     """
     Trouve l'altitude de débordement pour chaque profil en se basant sur l'altitude
     de débordement du profil précédent. L'altitude de débordement du premier profil
@@ -80,77 +81,55 @@ def find_bankfull_M2(spline_results: list, directory_path) -> list:
     :return: Liste de tuples contenant l'indice du profil et l'altitude de débordement
         pour ce profil.
     """
-    bankfull_values = []  # Liste pour stocker les altitudes de débordement de tous les transects
-    prev_bankfull = None  # Tuple pour stocker l'altitude de débordement du transect précédent
+
+    bankfull_values = []
+    prev_bankfull = None
+
+    # Appel à find_bankfull_M1 pour obtenir les altitudes maximales et les amplitudes par transect
+    _, amplitudes_per_transect = find_bankfull_M1(spline_results, directory_path, dist_pic)
 
     for idx, ref_altitude_smooth, profondeur_hydraulique_smooth in spline_results:
         profondeur_hydraulique_smooth_np = np.array(profondeur_hydraulique_smooth)
         ref_altitude_smooth_np = np.array(ref_altitude_smooth)
 
-        # Trouver les maxima et minima de la profondeur hydraulique
-        maxima_smooth, _ = find_peaks(profondeur_hydraulique_smooth_np, distance=1)
-        minima_smooth, _ = find_peaks(-profondeur_hydraulique_smooth_np, distance=1)
+        maxima_smooth, _ = find_peaks(profondeur_hydraulique_smooth_np, distance=dist_pic, prominence=0.001)
+        minima_smooth, _ = find_peaks(-profondeur_hydraulique_smooth_np, distance=dist_pic, prominence=0.001)
 
         if maxima_smooth.size > 0 and minima_smooth.size > 0:
-            amplitudes_smooth = [
-                profondeur_hydraulique_smooth_np[max_index] - profondeur_hydraulique_smooth_np[min_index]
-                for max_index, min_index in zip(maxima_smooth, minima_smooth)
-                if max_index < min_index  # Assure que le minimum vient après le maximum
-            ]
+            if idx == 0:
+                # Utiliser la même méthode que M1 pour le premier transect
+                max_amplitude = -np.inf
+                altitude_at_max_amplitude = None
+                for peak_index in maxima_smooth:
+                    for valley_index in minima_smooth:
+                        if valley_index > peak_index:
+                            amplitude = (
+                                profondeur_hydraulique_smooth[peak_index]
+                                - profondeur_hydraulique_smooth[valley_index]
+                            )
+                            if amplitude > max_amplitude:
+                                max_amplitude = amplitude
+                                altitude_at_max_amplitude = ref_altitude_smooth[peak_index]
 
-            # Filtrer pour garder uniquement les amplitudes positives
-            amplitudes_smooth = [amp for amp in amplitudes_smooth if amp > 0]
-
-            if amplitudes_smooth:
-                print(f"Transect {idx}: Amplitudes de rupture = {amplitudes_smooth}")
-
-                # Afficher les amplitudes et les altitudes associées
-                for i, amplitude in enumerate(amplitudes_smooth):
-                    altitude_at_max_amplitude = ref_altitude_smooth_np[maxima_smooth[i]]
-                    print(f"Amplitude {i}: {amplitude}, Altitude associée: {altitude_at_max_amplitude}")
-
-                if idx == 0:
-                    # Pour le premier transect, sélectionner l'amplitude maximale comme dans la méthode M1
-                    profondeur_hydraulique_smooth_array = np.array(profondeur_hydraulique_smooth)
-
-                    peaks, _ = find_peaks(profondeur_hydraulique_smooth_array, distance=10)
-                    valleys, _ = find_peaks(-profondeur_hydraulique_smooth_array, distance=10)
-
-                    if peaks.any() and valleys.any():
-                        altitude_at_max_amplitude = None
-                        max_amplitude = -np.inf
-
-                        for peak_index in peaks:
-                            for valley_index in valleys:
-                                if valley_index > peak_index:
-                                    amplitude = (
-                                        profondeur_hydraulique_smooth[peak_index]
-                                        - profondeur_hydraulique_smooth[valley_index]
-                                    )
-                                    if amplitude > max_amplitude:
-                                        max_amplitude = amplitude
-                                        altitude_at_max_amplitude = ref_altitude_smooth[peak_index]
-
-                        if altitude_at_max_amplitude is not None:
-                            alti_bankfull = altitude_at_max_amplitude
-                            prev_altitude = altitude_at_max_amplitude
-                            print(f"Transect {idx}: Amplitude sélectionnée (M1) = {max_amplitude}")
-                            print(f"Transect {idx}: Altitude correspondante = {alti_bankfull}")
-                    else:
-                        alti_bankfull = None
-                else:
-                    # Pour les transects suivants, sélectionner l'amplitude dont l'altitude est la plus proche de celle du transect précédent
-                    prev_altitude = prev_bankfull[1]
-                    altitude_at_maxima = ref_altitude_smooth_np[maxima_smooth]
-                    distances = np.abs(altitude_at_maxima - prev_altitude)
-                    closest_amplitude_index = np.argmin(distances)
-                    altitude_at_max_amplitude = ref_altitude_smooth_np[maxima_smooth[closest_amplitude_index]]
+                if altitude_at_max_amplitude is not None:
                     alti_bankfull = altitude_at_max_amplitude
-                    # print(f"Transect {idx}: Amplitude sélectionnée (M2) = {amplitudes_smooth[closest_amplitude_index]}")
-                    # print(f"Transect {idx}: Altitude correspondante = {alti_bankfull}")
-                 
+                    prev_altitude = alti_bankfull
+                    print(f"Altitude de débordement pour le profil {idx}: {alti_bankfull}")
             else:
-                alti_bankfull = None
+                if amplitudes_per_transect.get(idx):
+                    prev_altitude = prev_bankfull[1]
+
+                    # Trouver l'amplitude dont l'altitude est la plus proche de celle du profil précédent
+                    amplitude_at_maxima = ref_altitude_smooth_np[maxima_smooth]
+                    distances = np.abs(amplitude_at_maxima - prev_altitude)
+                    closest_amplitude_index = np.argmin(distances)
+                    altitude_previous_amplitude = ref_altitude_smooth_np[
+                        maxima_smooth[closest_amplitude_index]
+                    ]
+                    alti_bankfull = altitude_previous_amplitude
+                    print(f"Altitude de débordement pour le profil {idx}: {alti_bankfull}")
+                else:
+                    alti_bankfull = None
         else:
             alti_bankfull = None
 
@@ -159,7 +138,9 @@ def find_bankfull_M2(spline_results: list, directory_path) -> list:
             prev_bankfull = (idx, alti_bankfull)
 
     # Créer un DataFrame à partir de la liste de tuples
-    bankfull_previous_transects = pd.DataFrame(bankfull_values, columns=["x_sec_id", "altitude"])
+    bankfull_previous_transects = pd.DataFrame(
+        bankfull_values, columns=["x_sec_id", "altitude"]
+    )
 
     # Exporter dans un fichier .csv
     df_output_path = os.path.join(directory_path, "bankfull_previous_transects.csv")
