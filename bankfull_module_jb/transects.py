@@ -38,14 +38,12 @@ def get_point2(pt, bearing, dist):
     y = pt.y + dist * np.sin(bearing)
     return Point(x, y)
 
-def CalculTransects(transect_length, transect_spacing, directory_path):
+def CalculTransects(transect_length, transect_spacing, directory_path, crs):
     """Calcul des transects perpendiculaires à la ligne centrale
     :param transect_length: longueur des transects
     :param transect_spacing: pas d'espacement entre les transects
-    :param directory_path: chemin vers le répertoire d'enregistrement"""
-    
-    crs_epsg = 'EPSG:3948'
-    crs = pyproj.CRS.from_epsg(int(crs_epsg.split(':')[1]))
+    :param directory_path: chemin vers le répertoire d'enregistrement
+    :param crs: Système de coordonnées"""
 
     distance = transect_spacing
     tick_length = transect_length
@@ -97,20 +95,13 @@ def CalculTransects(transect_length, transect_spacing, directory_path):
     for i, line in enumerate(tick_lines):
         tick_lines_with_ids.append({'geometry': line, 'id': num_transects - 1 - i})
 
-    output_path = os.path.join(directory_path, "transects_{}.gpkg".format(distance))
+    output_path = os.path.join(directory_path, "profils.gpkg")
     gdf_tick_lines = gpd.GeoDataFrame(tick_lines_with_ids)
     gdf_tick_lines.crs = crs
     gdf_tick_lines.to_file(output_path, driver='GPKG')
 
-    if not gdf_tick_lines.empty:
-        try:
-            layer = QgsVectorLayer(output_path, "transects", "ogr")
-            if not layer.isValid():
-                print("La couche n'est pas valide.")
-                return
-            QgsProject.instance().addMapLayer(layer)
-            print("Fichier transects.gpkg ajouté dans le projet avec succès")
-        except Exception as e:
-            print("Erreur lors de l'ajout de la couche des transects au projet :", e)
-    else:
-        print("Géométrie vide pour les transects")
+    try:
+        layer = QgsVectorLayer(output_path, "profils", "ogr")
+        QgsProject.instance().addMapLayer(layer)
+    except Exception as e:
+        print("Erreur lors de l'ajout de la couche des profils en travers au projet :", e)
