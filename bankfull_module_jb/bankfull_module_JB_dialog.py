@@ -33,6 +33,7 @@ import pygeoops
 
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from PyQt5 import QtCore, QtWidgets
+from PyQt5.QtCore import QTimer
 from PyQt5.QtWidgets import QMessageBox
 from qgis.gui import QgsFileWidget
 from qgis.PyQt import uic
@@ -102,7 +103,7 @@ class bankfullJBDialog(QtWidgets.QDialog, FORM_CLASS):
             QMessageBox.warning(
                 self,
                 "Avertissement",
-                "CRS invalide ou non défini, EPSG:3948 utilisé par défaut.",
+                "CRS EPSG:3948 utilisé par défaut.",
             )
 
         qgis_crs = QgsCoordinateReferenceSystem()
@@ -129,6 +130,23 @@ class bankfullJBDialog(QtWidgets.QDialog, FORM_CLASS):
             self.horizontalSlider_final_results: self.label_current_profile_4,
         }
         self.init_sliders()
+
+        # QTimer pour les avertissements de fin de calcul
+        self.timer_label = QTimer(self)
+        self.timer_label.timeout.connect(self.hide_label_calcul_ok)
+
+        self.labels_calcul_ok = {
+            'centerline': self.label_calcul_OK_1,
+            'profils': self.label_calcul_OK_2, 
+            'export_donnees_brutes': self.label_calcul_OK_3,
+            'export_donnes_courbure': self.label_calcul_OK_4,
+            'critere_filtrage': self.label_calcul_OK_5,
+            'calcul_prof_hydr': self.label_calcul_OK_6,
+            'prof_hydr_max_amplitude': self.label_calcul_OK_7, 
+            'prof_hydr_profils_precedents': self.label_calcul_OK_8, 
+            'lissage_courbure': self.label_calcul_OK_9
+        }
+
         # --------------------------------------------------------------------------------
         # Connexion des signals
         # --------------------------------------------------------------------------------
@@ -304,12 +322,18 @@ class bankfullJBDialog(QtWidgets.QDialog, FORM_CLASS):
             QgsProject.instance().addMapLayer(layer)
             print("Fichier ligne_centrale.gpkg ajouté dans le projet avec succès")
 
-            self.label_calcul_OK_1.setText('Calcul terminé')
-            self.label_calcul_OK_1.setVisible(True)
-
+            # Afficher le QLabel approprié et démarrer le timer
+            self.labels_calcul_ok['centerline'].setText('Calcul terminé')
+            self.labels_calcul_ok['centerline'].setVisible(True)
+            self.timer_label.start(2000)  # 2000 ms = 2 s
         else:
             print("Géométrie vide")
 
+    def hide_label_calcul_ok(self):
+        """Masquer tous les QLabel après un certain temps."""
+        for label in self.labels_calcul_ok.values():
+            label.setVisible(False)
+        self.timer_label.stop()
     # ----------------------------------------------------------------------------------
     # -Calcul des transects perpendiculairement à la ligne centrale
     # ----------------------------------------------------------------------------------
@@ -321,8 +345,10 @@ class bankfullJBDialog(QtWidgets.QDialog, FORM_CLASS):
         CalculTransects(
             transect_length, transect_spacing, self.directory_path, self.crs
         )
-        self.label_calcul_OK_2.setText('Calcul terminé')
-        self.label_calcul_OK_2.setVisible(True)
+        # Afficher le QLabel approprié et démarrer le timer
+        self.labels_calcul_ok['profils'].setText('Calcul terminé')
+        self.labels_calcul_ok['profils'].setVisible(True)
+        self.timer_label.start(2000) 
 
     # ----------------------------------------------------------------------------------
     # - Projection des transects sur le MNT
@@ -364,8 +390,10 @@ class bankfullJBDialog(QtWidgets.QDialog, FORM_CLASS):
         df_transects = self.projection_mnt()
         output_file_name = "cross_section_data.csv"
         export_data(df_transects, self.directory_path, output_file_name)
-        self.label_calcul_OK_3.setText('Export terminé')
-        self.label_calcul_OK_3.setVisible(True)
+        # Afficher le QLabel approprié et démarrer le timer
+        self.labels_calcul_ok['export_donnees_brutes'].setText('Export terminé')
+        self.labels_calcul_ok['export_donnees_brutes'].setVisible(True)
+        self.timer_label.start(2000) 
 
     def export_donnees_curve(self, checked: bool) -> None:
         """Export des données de courbure
@@ -374,8 +402,9 @@ class bankfullJBDialog(QtWidgets.QDialog, FORM_CLASS):
         df_transects = self.projection_mnt()
         output_file_name = "curve_data.csv"
         export_data(df_transects, self.directory_path, output_file_name)
-        self.label_calcul_OK_4.setText('Export terminé')
-        self.label_calcul_OK_4.setVisible(True)
+        self.labels_calcul_ok['export_donnees_courbure'].setText('Export terminé')
+        self.labels_calcul_ok['export_donnees_courbure'].setVisible(True)
+        self.timer_label.start(2000) 
     # ----------------------------------------------------------------------------------
     # - Visualisation des transects dans la graphicsView
     # ----------------------------------------------------------------------------------
@@ -501,9 +530,9 @@ class bankfullJBDialog(QtWidgets.QDialog, FORM_CLASS):
         results_df = pd.DataFrame(results_list)
         df_output_path = os.path.join(self.directory_path, "area_trapezes.csv")
         results_df.to_csv(df_output_path, sep=",", index=False)
-        self.label_calcul_OK_5.setText('Calcul terminé')
-        self.label_calcul_OK_5.setVisible(True)
-        print("Fichier .csv 'area_trapezes.csv' exporté avec succès.")
+        self.labels_calcul_ok['critere_filtrage'].setText('Filtrage terminé')
+        self.labels_calcul_ok['critere_filtrage'].setVisible(True)
+        self.timer_label.start(2000) 
 
     # 1. Calcul de l'indicateur de profondeur hydraulique pour chaque
     # altitude présente dans la liste de référence
@@ -514,8 +543,9 @@ class bankfullJBDialog(QtWidgets.QDialog, FORM_CLASS):
         largest_negative_area = CalculerProfHydr(area_trapezes_data)
         output_file = os.path.join(self.directory_path, "prof_hydr.csv")
         largest_negative_area.to_csv(output_file, index=False)
-        self.label_calcul_OK_6.setText('Calcul terminé')
-        self.label_calcul_OK_6.setVisible(True)
+        self.labels_calcul_ok['calcul_prof_hydr'].setText('Calcul terminé')
+        self.labels_calcul_ok['calcul_prof_hydr'].setVisible(True)
+        self.timer_label.start(2000)
         print("DataFrame exporté avec succès vers", output_file)
 
     # Lissage de la courbe de profondeur hydraulique en fonction de l'altitude
@@ -637,8 +667,9 @@ class bankfullJBDialog(QtWidgets.QDialog, FORM_CLASS):
         find_bankfull_M1(
             self.spline_results, self.directory_path, self.dist_pic, self.prominence
         )
-        self.label_calcul_OK_7.setText('Calcul terminé')
-        self.label_calcul_OK_7.setVisible(True)
+        self.labels_calcul_ok['prof_hydr_max_amplitude'].setText('Calcul terminé')
+        self.labels_calcul_ok['prof_hydr_max_amplitude'].setVisible(True)
+        self.timer_label.start(2000)
     # --------------------------------------------------------------------------------
     # Méthode 1b : Profils précédents
     # --------------------------------------------------------------------------------
@@ -646,8 +677,9 @@ class bankfullJBDialog(QtWidgets.QDialog, FORM_CLASS):
         find_bankfull_M2(
             self.spline_results, self.directory_path, self.dist_pic, self.prominence
         )
-        self.label_calcul_OK_8.setText('Calcul terminé')
-        self.label_calcul_OK_8.setVisible(True)
+        self.labels_calcul_ok['prof_hydr_profils_precedents'].setText('Calcul terminé')
+        self.labels_calcul_ok['prof_hydr_profils_precedents'].setVisible(True)
+        self.timer_label.start(2000)
     # --------------------------------------------------------------------------------
     # Méthode 2 basée sur la courbure minimale du relief
     # --------------------------------------------------------------------------------
@@ -662,8 +694,9 @@ class bankfullJBDialog(QtWidgets.QDialog, FORM_CLASS):
         )
         # Appliquer le lissage Savitzky-Golay aux données de courbure
         self.transect_data = curve_Savitzky_Golay(curve_data, cross_section_data)
-        self.label_calcul_OK_9.setText('Calcul terminé')
-        self.label_calcul_OK_9.setVisible(True)
+        self.labels_calcul_ok['lissage_courbure'].setText('Calcul terminé')
+        self.labels_calcul_ok['lissage_courbure'].setVisible(True)
+        self.timer_label.start(2000)
 
     # 2. Affichage des courbes lissées avec les divers pics sélectionnés
     def tracer_pic_curve(self):
@@ -712,7 +745,7 @@ class bankfullJBDialog(QtWidgets.QDialog, FORM_CLASS):
                 ]["Distance"].to_numpy()
                 # Tracé de la courbe de courbure et des pics détectés
                 ax.plot(
-                    distance, alti, label="Profil en travers", zorder=1, color="#4F4F2F"
+                    distance, alti, label="Profil en travers", zorder=1, color='#9A6200'
                 )
                 ax.scatter(
                     projected_distances,
@@ -751,16 +784,18 @@ class bankfullJBDialog(QtWidgets.QDialog, FORM_CLASS):
                 if bankfull_m1.size > 0:
                     ax.axhline(
                         y=bankfull_m1[0],
-                        color="#E47833",
+                        color="#FF796C",
                         linestyle="-.",
                         label="Amplitude maximale",
+                        zorder=1,
                     )
                 if bankfull_m2.size > 0:
                     ax.axhline(
                         y=bankfull_m2[0],
-                        color="#99CC32",
+                        color="#380282",
                         linestyle="-.",
                         label="Profils précédents",
+                        zorder=1,
                     )
 
                 ax.set_title(
@@ -974,9 +1009,9 @@ class bankfullJBDialog(QtWidgets.QDialog, FORM_CLASS):
                 fig, ax = plt.subplots(figsize=(8, 6))  # Taille du graphique
                 alti = group_data["POINT_Z"].to_numpy()
                 distance = group_data["Distance"].to_numpy()
-                ax.plot(distance, alti, label="Profil en travers")
+                ax.plot(distance, alti, label="Profil en travers", color='#9A6200')
                 ax.set_title(
-                    f"Profil en travers avec altitude de débordement (profil {group_name})",
+                    f"Profil en travers profil {group_name}",
                     fontsize=11,
                 )
                 ax.set_xlabel("Distance (m)", fontsize=11)
@@ -987,7 +1022,7 @@ class bankfullJBDialog(QtWidgets.QDialog, FORM_CLASS):
                     # Tracer la droite d'altitude de débordement
                     ax.axhline(
                         y=bankfull_altitude,
-                        color="r",
+                        color="black",
                         linestyle="--",
                         linewidth=1,
                         label=f"Altitude de débordement: {bankfull_altitude:.2f}",
@@ -1152,7 +1187,7 @@ class bankfullJBDialog(QtWidgets.QDialog, FORM_CLASS):
                 fig, ax = plt.subplots(figsize=(8, 6))  # Taille du graphique
                 alti = group_data["POINT_Z"].to_numpy()
                 distance = group_data["Distance"].to_numpy()
-                ax.plot(distance, alti, label="Profil en travers")
+                ax.plot(distance, alti, label="Profil en travers", color='#9A6200')
 
                 # Recherche du point sélectionné pour ce profil
                 selected_point = selected_points_data[
@@ -1170,7 +1205,7 @@ class bankfullJBDialog(QtWidgets.QDialog, FORM_CLASS):
                     # Tracer une droite horizontale passant par le point sélectionné
                     ax.axhline(
                         y=selected_point["altitude"].iloc[0],
-                        color="red",
+                        color="black",
                         linestyle="--",
                         label=f'Altitude conservé: {selected_point["altitude"].iloc[0]}',
                     )
