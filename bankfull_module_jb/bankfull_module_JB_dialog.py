@@ -33,14 +33,14 @@ import pygeoops
 
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from PyQt5 import QtCore, QtWidgets
-from qgis.gui import QgsFileWidget, QgsProjectionSelectionWidget
+from PyQt5.QtWidgets import QMessageBox
+from qgis.gui import QgsFileWidget
 from qgis.PyQt import uic
 from qgis.core import (
     QgsProject,
     QgsVectorLayer,
     QgsMapLayerType,
     QgsWkbTypes,
-    QgsApplication,
     QgsCoordinateReferenceSystem,
 )
 
@@ -82,8 +82,9 @@ class bankfullJBDialog(QtWidgets.QDialog, FORM_CLASS):
             self.lineEdit_l_transect: "40",
             self.lineEdit_e_transects: "30",
             self.lineEdit_filtrage_aires: "0.1",
-            self.lineEdit_interp_nb_pts: "500",
+            self.lineEdit_interp_nb_pts: "100",
             self.lineEdit_dist_max_min: "10",
+            self.lineEdit_prominence: "0.01",
         }
         for le, default_value in le_config.items():
             le.setText(default_value)
@@ -91,7 +92,19 @@ class bankfullJBDialog(QtWidgets.QDialog, FORM_CLASS):
             # Connecter les signaux de modification de texte
             le.textChanged.connect(self.updateLineEdit)
 
-        self.crs = pyproj.CRS.from_string(QgsProject.instance().crs().authid())
+        try:
+            project_crs = QgsProject.instance().crs().authid()
+            if not project_crs:
+                raise pyproj.exceptions.CRSError("CRS non défini")
+            self.crs = pyproj.CRS.from_string(project_crs)
+        except pyproj.exceptions.CRSError:
+            self.crs = pyproj.CRS.from_epsg(3948)  # Utiliser EPSG:3948 par défaut
+            QMessageBox.warning(
+                self,
+                "Avertissement",
+                "CRS invalide ou non défini, EPSG:3948 utilisé par défaut.",
+            )
+
         qgis_crs = QgsCoordinateReferenceSystem()
         qgis_crs.createFromOgcWmsCrs(self.crs.to_string())
 
@@ -100,6 +113,7 @@ class bankfullJBDialog(QtWidgets.QDialog, FORM_CLASS):
         self.all_projected_distances = None
         self.all_projected_altitudes = None
         self.dist_pic = None
+        self.prominence = None
         self.selected_points_data = []
         self.pts_limites_results_list = []
         self.coords_3D_list = []
@@ -199,25 +213,39 @@ class bankfullJBDialog(QtWidgets.QDialog, FORM_CLASS):
         for layer in QgsProject.instance().mapLayers().values():
             if layer.type() == QgsMapLayerType.RasterLayer:
                 self.comboBox_MNT.addItem(layer.name())
+        # Sélectionner automatiquement la première couche si elle existe
+        if self.comboBox_MNT.count() > 0:
+            self.comboBox_MNT.setCurrentIndex(0)
+            self.select_couche_MNT()
 
     def select_couche_MNT(self):
         layer_name = self.comboBox_MNT.currentText()
-        self.selected_MNT_layer = QgsProject.instance().mapLayersByName(layer_name)[0]
-        print("Couche raster:", self.selected_MNT_layer)
+        if layer_name:
+            self.selected_MNT_layer = QgsProject.instance().mapLayersByName(layer_name)[
+                0
+            ]
+            print("Couche raster:", self.selected_MNT_layer)
 
     def update_polygon_layers(self):
         self.comboBox_polygon.clear()
         for layer in QgsProject.instance().mapLayers().values():
-            if layer.type() == QgsMapLayerType.VectorLayer:
-                if layer.geometryType() == QgsWkbTypes.PolygonGeometry:
-                    self.comboBox_polygon.addItem(layer.name())
+            if (
+                layer.type() == QgsMapLayerType.VectorLayer
+                and layer.geometryType() == QgsWkbTypes.PolygonGeometry
+            ):
+                self.comboBox_polygon.addItem(layer.name())
+        # Sélectionner automatiquement la première couche si elle existe
+        if self.comboBox_polygon.count() > 0:
+            self.comboBox_polygon.setCurrentIndex(0)
+            self.select_couche_polygon()
 
     def select_couche_polygon(self):
         layer_name = self.comboBox_polygon.currentText()
-        self.selected_polygon_layer = QgsProject.instance().mapLayersByName(layer_name)[
-            0
-        ]
-        print("Couche polygone:", self.selected_polygon_layer)
+        if layer_name:
+            self.selected_polygon_layer = QgsProject.instance().mapLayersByName(
+                layer_name
+            )[0]
+            print("Couche polygone:", self.selected_polygon_layer)
 
     # --------------------------------------------------------------------------------
     # Système de coordonnées
@@ -276,6 +304,9 @@ class bankfullJBDialog(QtWidgets.QDialog, FORM_CLASS):
             QgsProject.instance().addMapLayer(layer)
             print("Fichier ligne_centrale.gpkg ajouté dans le projet avec succès")
 
+            self.label_calcul_OK_1.setText('Calcul terminé')
+            self.label_calcul_OK_1.setVisible(True)
+
         else:
             print("Géométrie vide")
 
@@ -290,6 +321,8 @@ class bankfullJBDialog(QtWidgets.QDialog, FORM_CLASS):
         CalculTransects(
             transect_length, transect_spacing, self.directory_path, self.crs
         )
+        self.label_calcul_OK_2.setText('Calcul terminé')
+        self.label_calcul_OK_2.setVisible(True)
 
     # ----------------------------------------------------------------------------------
     # - Projection des transects sur le MNT
@@ -331,6 +364,8 @@ class bankfullJBDialog(QtWidgets.QDialog, FORM_CLASS):
         df_transects = self.projection_mnt()
         output_file_name = "cross_section_data.csv"
         export_data(df_transects, self.directory_path, output_file_name)
+        self.label_calcul_OK_3.setText('Export terminé')
+        self.label_calcul_OK_3.setVisible(True)
 
     def export_donnees_curve(self, checked: bool) -> None:
         """Export des données de courbure
@@ -339,7 +374,8 @@ class bankfullJBDialog(QtWidgets.QDialog, FORM_CLASS):
         df_transects = self.projection_mnt()
         output_file_name = "curve_data.csv"
         export_data(df_transects, self.directory_path, output_file_name)
-
+        self.label_calcul_OK_4.setText('Export terminé')
+        self.label_calcul_OK_4.setVisible(True)
     # ----------------------------------------------------------------------------------
     # - Visualisation des transects dans la graphicsView
     # ----------------------------------------------------------------------------------
@@ -465,6 +501,8 @@ class bankfullJBDialog(QtWidgets.QDialog, FORM_CLASS):
         results_df = pd.DataFrame(results_list)
         df_output_path = os.path.join(self.directory_path, "area_trapezes.csv")
         results_df.to_csv(df_output_path, sep=",", index=False)
+        self.label_calcul_OK_5.setText('Calcul terminé')
+        self.label_calcul_OK_5.setVisible(True)
         print("Fichier .csv 'area_trapezes.csv' exporté avec succès.")
 
     # 1. Calcul de l'indicateur de profondeur hydraulique pour chaque
@@ -476,6 +514,8 @@ class bankfullJBDialog(QtWidgets.QDialog, FORM_CLASS):
         largest_negative_area = CalculerProfHydr(area_trapezes_data)
         output_file = os.path.join(self.directory_path, "prof_hydr.csv")
         largest_negative_area.to_csv(output_file, index=False)
+        self.label_calcul_OK_6.setText('Calcul terminé')
+        self.label_calcul_OK_6.setVisible(True)
         print("DataFrame exporté avec succès vers", output_file)
 
     # Lissage de la courbe de profondeur hydraulique en fonction de l'altitude
@@ -483,19 +523,21 @@ class bankfullJBDialog(QtWidgets.QDialog, FORM_CLASS):
     def smooth_peaks(self):
         dist_pic = int(float(self.lineEdit_dist_max_min.text()))
         pts_interp = int(float(self.lineEdit_interp_nb_pts.text()))
+        prominence = int(float(self.lineEdit_prominence.text()))
         spline_results, peaks_valleys_data = CalculerPeaks(
-            dist_pic, pts_interp, self.directory_path
+            dist_pic, pts_interp, prominence, self.directory_path
         )
         return spline_results, peaks_valleys_data
 
     # Fonction pour visualiser la courbe lissée et les maximums/minimums locaux
     def tracer_prof_hydr(self) -> None:
-        # Charger les données à partir du fichier CSV
-        prof_hydr_data = pd.read_csv(os.path.join(self.directory_path, "prof_hydr.csv"))
         dist_pic = int(float(self.lineEdit_dist_max_min.text()))
         pts_interp = int(float(self.lineEdit_interp_nb_pts.text()))
+        prominence = int(float(self.lineEdit_prominence.text()))
+        # Charger les données à partir du fichier CSV
+        prof_hydr_data = pd.read_csv(os.path.join(self.directory_path, "prof_hydr.csv"))
         self.spline_results, peaks_valleys_data = CalculerPeaks(
-            dist_pic, pts_interp, self.directory_path
+            dist_pic, pts_interp, prominence, self.directory_path
         )
         # Récupération de la valeur de la barre de défilement
         scrollbar_value = self.verticalSlider_visualisation.value()
@@ -592,14 +634,20 @@ class bankfullJBDialog(QtWidgets.QDialog, FORM_CLASS):
     # Méthode 1a : Amplitude de rupture de pente maximale
     # --------------------------------------------------------------------------------
     def find_bankfull_max_amplitude(self):
-        find_bankfull_M1(self.spline_results, self.directory_path, self.dist_pic)
-
+        find_bankfull_M1(
+            self.spline_results, self.directory_path, self.dist_pic, self.prominence
+        )
+        self.label_calcul_OK_7.setText('Calcul terminé')
+        self.label_calcul_OK_7.setVisible(True)
     # --------------------------------------------------------------------------------
     # Méthode 1b : Profils précédents
     # --------------------------------------------------------------------------------
     def find_banfkull_previous_transects(self):
-        find_bankfull_M2(self.spline_results, self.directory_path, self.dist_pic)
-
+        find_bankfull_M2(
+            self.spline_results, self.directory_path, self.dist_pic, self.prominence
+        )
+        self.label_calcul_OK_8.setText('Calcul terminé')
+        self.label_calcul_OK_8.setVisible(True)
     # --------------------------------------------------------------------------------
     # Méthode 2 basée sur la courbure minimale du relief
     # --------------------------------------------------------------------------------
@@ -614,6 +662,8 @@ class bankfullJBDialog(QtWidgets.QDialog, FORM_CLASS):
         )
         # Appliquer le lissage Savitzky-Golay aux données de courbure
         self.transect_data = curve_Savitzky_Golay(curve_data, cross_section_data)
+        self.label_calcul_OK_9.setText('Calcul terminé')
+        self.label_calcul_OK_9.setVisible(True)
 
     # 2. Affichage des courbes lissées avec les divers pics sélectionnés
     def tracer_pic_curve(self):
@@ -853,7 +903,7 @@ class bankfullJBDialog(QtWidgets.QDialog, FORM_CLASS):
 
         scrollbar_value = self.horizontalSlider_final_results.value()
         view_height = self.graphicsView_prof_hydr.height()
-        graph_height = 541  # Hauteur approximative d'un graphique
+        graph_height = view_height
         visible_graphs = max(1, int(view_height / graph_height))
 
         start_index = scrollbar_value
@@ -866,9 +916,11 @@ class bankfullJBDialog(QtWidgets.QDialog, FORM_CLASS):
         self.pts_limites_results_list = []
 
         for x_sec_id in x_sec_id_unique:
-            alti_bankfull_dict[x_sec_id] = data_bankfull[
-                data_bankfull["x_sec_id"] == x_sec_id
-            ]["altitude"].values[0]
+            bankfull_values = data_bankfull[data_bankfull["x_sec_id"] == x_sec_id]["altitude"].values
+            if bankfull_values.size > 0:
+                alti_bankfull_dict[x_sec_id] = bankfull_values[0]
+            else:
+                alti_bankfull_dict[x_sec_id] = None
 
         for group_name, group_data in cross_section_data.groupby("x_sec_id"):
             bankfull_altitude = alti_bankfull_dict[group_name]
@@ -879,25 +931,27 @@ class bankfullJBDialog(QtWidgets.QDialog, FORM_CLASS):
             river_center_distance = round(
                 group_data[group_data["RivCentre"] == True]["Distance"].iloc[0], 3
             )
-            bankfull_point_y = bankfull_altitude
 
-            # Calculer les points d'intersection entre la droite et le profil
             left_intersection = None
             right_intersection = None
 
-            # Trouver le premier point d'intersection à gauche
-            for i in range(len(distance) - 1, -1, -1):
-                if distance[i] < river_center_distance:
-                    if alti[i] >= bankfull_point_y:
-                        left_intersection = (distance[i], bankfull_point_y)
-                        break
+            if bankfull_altitude is not None:
+                bankfull_point_y = bankfull_altitude
 
-            # Trouver le premier point d'intersection à droite
-            for i in range(len(distance)):
-                if distance[i] >= river_center_distance:
-                    if alti[i] >= bankfull_point_y:
-                        right_intersection = (distance[i], bankfull_point_y)
-                        break
+                # Calculer les points d'intersection entre la droite et le profil
+                # Trouver le premier point d'intersection à gauche
+                for i in range(len(distance) - 1, -1, -1):
+                    if distance[i] < river_center_distance:
+                        if alti[i] >= bankfull_point_y:
+                            left_intersection = (distance[i], bankfull_point_y)
+                            break
+
+                # Trouver le premier point d'intersection à droite
+                for i in range(len(distance)):
+                    if distance[i] >= river_center_distance:
+                        if alti[i] >= bankfull_point_y:
+                            right_intersection = (distance[i], bankfull_point_y)
+                            break
 
             # Ajouter les résultats à la liste
             self.pts_limites_results_list.append(
@@ -929,49 +983,50 @@ class bankfullJBDialog(QtWidgets.QDialog, FORM_CLASS):
                 ax.set_ylabel("Altitude (m)", fontsize=11)
                 ax.grid(True)
 
-                # Tracer la droite d'altitude de débordement
-                ax.axhline(
-                    y=bankfull_altitude,
-                    color="r",
-                    linestyle="--",
-                    linewidth=1,
-                    label=f"Altitude de débordement: {bankfull_altitude:.2f}",
-                )
-
-                # Afficher les points d'intersection
-                left_intersection = next(
-                    (
-                        item[1]
-                        for item in self.pts_limites_results_list
-                        if item[0] == group_name
-                    ),
-                    None,
-                )
-                right_intersection = next(
-                    (
-                        item[2]
-                        for item in self.pts_limites_results_list
-                        if item[0] == group_name
-                    ),
-                    None,
-                )
-
-                if left_intersection:
-                    ax.plot(
-                        left_intersection[0],
-                        left_intersection[1],
-                        "bo",
-                        label="Point limite gauche",
-                    )
-                if right_intersection:
-                    ax.plot(
-                        right_intersection[0],
-                        right_intersection[1],
-                        "go",
-                        label="Point limite droite",
+                if bankfull_altitude is not None:
+                    # Tracer la droite d'altitude de débordement
+                    ax.axhline(
+                        y=bankfull_altitude,
+                        color="r",
+                        linestyle="--",
+                        linewidth=1,
+                        label=f"Altitude de débordement: {bankfull_altitude:.2f}",
                     )
 
-                ax.legend()
+                    # Afficher les points d'intersection
+                    left_intersection = next(
+                        (
+                            item[1]
+                            for item in self.pts_limites_results_list
+                            if item[0] == group_name
+                        ),
+                        None,
+                    )
+                    right_intersection = next(
+                        (
+                            item[2]
+                            for item in self.pts_limites_results_list
+                            if item[0] == group_name
+                        ),
+                        None,
+                    )
+
+                    if left_intersection:
+                        ax.plot(
+                            left_intersection[0],
+                            left_intersection[1],
+                            "bo",
+                            label="Point limite gauche",
+                        )
+                    if right_intersection:
+                        ax.plot(
+                            right_intersection[0],
+                            right_intersection[1],
+                            "go",
+                            label="Point limite droite",
+                        )
+
+                    ax.legend()
                 plt.tight_layout()
 
                 # Ajouter le graphique à la scène
@@ -1061,10 +1116,6 @@ class bankfullJBDialog(QtWidgets.QDialog, FORM_CLASS):
                             )
                             break
 
-                # Ajouter les résultats à la liste avec le point conservé et l'intersection sur l'autre berge
-                # self.pts_limites_results_list.append(
-                # (group_name, (selected_point_distance, selected_point_altitude), other_bank_intersection)
-                # )
                 left_intersection = None
                 right_intersection = None
 
@@ -1210,7 +1261,7 @@ class bankfullJBDialog(QtWidgets.QDialog, FORM_CLASS):
                 y_interp = np.interp(distance, distances, y_coords)
                 return x_interp, y_interp
 
-            # Interpoler les coordonnées pour le point limite droite (anciennement gauche)
+            # Interpoler les coordonnées pour le point limite droite
             if right_point:
                 right_distance, right_altitude = right_point
                 right_x, right_y = interpolate_coords(
@@ -1218,7 +1269,7 @@ class bankfullJBDialog(QtWidgets.QDialog, FORM_CLASS):
                 )
                 self.coords_3D_right_list.append((right_x, right_y, right_altitude))
 
-            # Interpoler les coordonnées pour le point limite gauche (anciennement droite)
+            # Interpoler les coordonnées pour le point limite gauche
             if left_point:
                 left_distance, left_altitude = left_point
                 left_x, left_y = interpolate_coords(
@@ -1227,9 +1278,6 @@ class bankfullJBDialog(QtWidgets.QDialog, FORM_CLASS):
                 self.coords_3D_left_list.append(
                     (transect_id, left_x, left_y, left_altitude)
                 )
-
-        print("Points limites gauche (nouveaux):", self.coords_3D_left_list)
-        print("Points limites droite (nouveaux):", self.coords_3D_right_list)
         return self.coords_3D_left_list, self.coords_3D_right_list
 
     def exporter_points_limite(self):

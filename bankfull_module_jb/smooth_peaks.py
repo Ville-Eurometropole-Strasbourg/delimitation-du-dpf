@@ -5,7 +5,7 @@ from scipy.signal import find_peaks
 from scipy.interpolate import make_interp_spline
 
 
-def CalculerPeaks(dist_pic, pts_interp, directory_path):
+def CalculerPeaks(dist_pic, pts_interp, prominence, directory_path):
     """Lissage d'une courbe et calcul des minimums et maximums locaux"""
 
     # Récupération des données présentes dans la DataFrame "prof_hydr.csv"
@@ -36,10 +36,10 @@ def CalculerPeaks(dist_pic, pts_interp, directory_path):
         )
         # Détections des minimums et maximums locaux
         peaks, _ = find_peaks(
-            profondeur_hydraulique_smooth, distance=dist_pic
+            profondeur_hydraulique_smooth, distance=dist_pic, prominence=prominence
         )
         valleys, _ = find_peaks(
-            -profondeur_hydraulique_smooth, distance=dist_pic
+            -profondeur_hydraulique_smooth, distance=dist_pic, prominence=prominence
         )
 
         # Récupérer les maximums locaux

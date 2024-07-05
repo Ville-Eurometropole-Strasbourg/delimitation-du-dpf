@@ -4,7 +4,7 @@ import pandas as pd
 from scipy.signal import find_peaks
 
 
-def find_bankfull_M1(spline_results: list, directory_path, dist_pic) -> list:
+def find_bankfull_M1(spline_results: list, directory_path, dist_pic, prominence) -> list:
     """
     Trouve l'altitude maximale de débordement pour chaque transect et affiche les amplitudes positives pour chaque transect.
     :param spline_results: Liste de tuples (group_name, ref_altitude_smooth, profondeur_hydraulique_smooth) représentant
@@ -24,8 +24,8 @@ def find_bankfull_M1(spline_results: list, directory_path, dist_pic) -> list:
 
         profondeur_hydraulique_smooth_array = np.array(profondeur_hydraulique_smooth)
 
-        peaks, _ = find_peaks(profondeur_hydraulique_smooth_array, distance=dist_pic)
-        valleys, _ = find_peaks(-profondeur_hydraulique_smooth_array, distance=dist_pic)
+        peaks, _ = find_peaks(profondeur_hydraulique_smooth_array, distance=dist_pic, prominence=prominence)
+        valleys, _ = find_peaks(-profondeur_hydraulique_smooth_array, distance=dist_pic, prominence=prominence)
 
         if peaks.any() and valleys.any():
             altitude_at_max_amplitude = None
@@ -66,7 +66,7 @@ def find_bankfull_M1(spline_results: list, directory_path, dist_pic) -> list:
     return altitude_max_amplitudes, amplitudes_per_transect
 
 
-def find_bankfull_M2(spline_results: list, directory_path, dist_pic) -> list:
+def find_bankfull_M2(spline_results: list, directory_path, dist_pic, prominence) -> list:
     """
     Trouve l'altitude de débordement pour chaque profil en se basant sur l'altitude
     de débordement du profil précédent. L'altitude de débordement du premier profil
@@ -82,14 +82,14 @@ def find_bankfull_M2(spline_results: list, directory_path, dist_pic) -> list:
     prev_bankfull = None
 
     # Appel à find_bankfull_M1 pour obtenir les altitudes maximales et les amplitudes par transect
-    _, amplitudes_per_transect = find_bankfull_M1(spline_results, directory_path, dist_pic)
+    _, amplitudes_per_transect = find_bankfull_M1(spline_results, directory_path, dist_pic, prominence)
 
     for idx, ref_altitude_smooth, profondeur_hydraulique_smooth in spline_results:
         profondeur_hydraulique_smooth_np = np.array(profondeur_hydraulique_smooth)
         ref_altitude_smooth_np = np.array(ref_altitude_smooth)
 
-        maxima_smooth, _ = find_peaks(profondeur_hydraulique_smooth_np, distance=dist_pic)
-        minima_smooth, _ = find_peaks(-profondeur_hydraulique_smooth_np, distance=dist_pic)
+        maxima_smooth, _ = find_peaks(profondeur_hydraulique_smooth_np, distance=dist_pic, prominence=prominence)
+        minima_smooth, _ = find_peaks(-profondeur_hydraulique_smooth_np, distance=dist_pic, prominence=prominence)
 
         if maxima_smooth.size > 0 and minima_smooth.size > 0:
             if idx == 0:
