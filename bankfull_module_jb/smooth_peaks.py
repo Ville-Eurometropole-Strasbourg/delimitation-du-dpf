@@ -36,10 +36,10 @@ def CalculerPeaks(dist_pic, pts_interp, directory_path):
         )
         # Détections des minimums et maximums locaux
         peaks, _ = find_peaks(
-            profondeur_hydraulique_smooth, distance=dist_pic, prominence=0.001
+            profondeur_hydraulique_smooth, distance=dist_pic
         )
         valleys, _ = find_peaks(
-            -profondeur_hydraulique_smooth, distance=dist_pic, prominence=0.001
+            -profondeur_hydraulique_smooth, distance=dist_pic
         )
 
         # Récupérer les maximums locaux

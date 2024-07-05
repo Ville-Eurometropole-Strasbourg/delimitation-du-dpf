@@ -95,6 +95,7 @@ class bankfullJBDialog(QtWidgets.QDialog, FORM_CLASS):
         qgis_crs = QgsCoordinateReferenceSystem()
         qgis_crs.createFromOgcWmsCrs(self.crs.to_string())
 
+        self.spline_results = []
         self.directory_path = None
         self.all_projected_distances = None
         self.all_projected_altitudes = None
@@ -493,10 +494,9 @@ class bankfullJBDialog(QtWidgets.QDialog, FORM_CLASS):
         prof_hydr_data = pd.read_csv(os.path.join(self.directory_path, "prof_hydr.csv"))
         dist_pic = int(float(self.lineEdit_dist_max_min.text()))
         pts_interp = int(float(self.lineEdit_interp_nb_pts.text()))
-        spline_results, peaks_valleys_data = CalculerPeaks(
+        self.spline_results, peaks_valleys_data = CalculerPeaks(
             dist_pic, pts_interp, self.directory_path
         )
-
         # Récupération de la valeur de la barre de défilement
         scrollbar_value = self.verticalSlider_visualisation.value()
         view_height = self.graphicsView_prof_hydr.height()
@@ -533,7 +533,7 @@ class bankfullJBDialog(QtWidgets.QDialog, FORM_CLASS):
                 ax.grid(True)
 
                 # Find corresponding spline results
-                for result in spline_results:
+                for result in self.spline_results:
                     if result[0] == group_name:
                         x_smooth = np.array(result[1])
                         y_smooth = np.array(result[2])
@@ -593,7 +593,6 @@ class bankfullJBDialog(QtWidgets.QDialog, FORM_CLASS):
     # --------------------------------------------------------------------------------
     def find_bankfull_max_amplitude(self):
         find_bankfull_M1(self.spline_results, self.directory_path, self.dist_pic)
-        # print("Altitudes de débordement:", bankfull_values_M1)
 
     # --------------------------------------------------------------------------------
     # Méthode 1b : Profils précédents
@@ -661,7 +660,6 @@ class bankfullJBDialog(QtWidgets.QDialog, FORM_CLASS):
                 distance = cross_section_data[
                     cross_section_data["x_sec_id"] == transect_id
                 ]["Distance"].to_numpy()
-
                 # Tracé de la courbe de courbure et des pics détectés
                 ax.plot(
                     distance, alti, label="Profil en travers", zorder=1, color="#4F4F2F"
@@ -741,6 +739,7 @@ class bankfullJBDialog(QtWidgets.QDialog, FORM_CLASS):
 
     # 3. Choix de l'altitude de débordement avec sélection
     # du point retenu par l'utilisateur pour chaque transect
+
     def conserver_point(self):
         point_index_str = self.lineEdit_id_pt_conserver.text()
         try:
@@ -798,7 +797,6 @@ class bankfullJBDialog(QtWidgets.QDialog, FORM_CLASS):
         self.visualize_final_results()
 
     def visualize_final_results(self):
-        """Visualisation des résultats en fonction de la méthode utilisée"""
         if self.selected_algorithm is None:
             # Si aucun algorithme n'est sélectionné, ne rien faire
             return
@@ -1063,6 +1061,10 @@ class bankfullJBDialog(QtWidgets.QDialog, FORM_CLASS):
                             )
                             break
 
+                # Ajouter les résultats à la liste avec le point conservé et l'intersection sur l'autre berge
+                # self.pts_limites_results_list.append(
+                # (group_name, (selected_point_distance, selected_point_altitude), other_bank_intersection)
+                # )
                 left_intersection = None
                 right_intersection = None
 
@@ -1170,6 +1172,9 @@ class bankfullJBDialog(QtWidgets.QDialog, FORM_CLASS):
         print(self.pts_limites_results_list)
 
         return self.pts_limites_results_list
+
+    # créer une nouvelle liste pour exporter les point selectionne du fichier csv ?
+
     # --------------------------------------------------------------------------------------------------------
     # Calcul des points de la limite en fonction de la méthode retenue pour le choix du niveau de débordement
     # --------------------------------------------------------------------------------------------------------
@@ -1181,6 +1186,8 @@ class bankfullJBDialog(QtWidgets.QDialog, FORM_CLASS):
         cross_section_data = pd.read_csv(
             os.path.join(self.directory_path, "cross_section_data.csv"), sep=","
         )
+        print("Type de pts_limites_results_list:", type(pts_limites_results_list))
+        print("Valeur de pts_limites_results_list:", pts_limites_results_list)
 
         self.coords_3D_left_list = []
         self.coords_3D_right_list = []
@@ -1203,7 +1210,7 @@ class bankfullJBDialog(QtWidgets.QDialog, FORM_CLASS):
                 y_interp = np.interp(distance, distances, y_coords)
                 return x_interp, y_interp
 
-            # Interpoler les coordonnées pour le point limite droite
+            # Interpoler les coordonnées pour le point limite droite (anciennement gauche)
             if right_point:
                 right_distance, right_altitude = right_point
                 right_x, right_y = interpolate_coords(
@@ -1211,7 +1218,7 @@ class bankfullJBDialog(QtWidgets.QDialog, FORM_CLASS):
                 )
                 self.coords_3D_right_list.append((right_x, right_y, right_altitude))
 
-            # Interpoler les coordonnées pour le point limite gauche
+            # Interpoler les coordonnées pour le point limite gauche (anciennement droite)
             if left_point:
                 left_distance, left_altitude = left_point
                 left_x, left_y = interpolate_coords(
@@ -1220,6 +1227,9 @@ class bankfullJBDialog(QtWidgets.QDialog, FORM_CLASS):
                 self.coords_3D_left_list.append(
                     (transect_id, left_x, left_y, left_altitude)
                 )
+
+        print("Points limites gauche (nouveaux):", self.coords_3D_left_list)
+        print("Points limites droite (nouveaux):", self.coords_3D_right_list)
         return self.coords_3D_left_list, self.coords_3D_right_list
 
     def exporter_points_limite(self):
@@ -1232,13 +1242,13 @@ class bankfullJBDialog(QtWidgets.QDialog, FORM_CLASS):
             self.export_points_limite_curvature()
 
     def export_points_limites_shp(self, coords_3D_list, filename_prefix):
-        # Export des points limites au format Shapefile
+        # Exporter les points limites au format Shapefile
         filename = filename_prefix + ".shp"
         self.export_points_to_shapefile(coords_3D_list, filename)
 
     def export_points_to_shapefile(self, coords_3D_list, filename):
         output_shapefile_path = os.path.join(self.directory_path, filename)
-        geometries = [Point(x, y, z) for _, x, y, z in coords_3D_list]
+        geometries = [Point(x, y, z) for _, x, y, z in coords_3D_list]  # Change here
         transect_id, x_col, y_col, z_col = zip(
             *[(transect_id, x, y, z) for transect_id, x, y, z in coords_3D_list]
         )

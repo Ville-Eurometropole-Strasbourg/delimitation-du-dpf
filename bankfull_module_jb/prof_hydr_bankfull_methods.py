@@ -24,8 +24,8 @@ def find_bankfull_M1(spline_results: list, directory_path, dist_pic) -> list:
 
         profondeur_hydraulique_smooth_array = np.array(profondeur_hydraulique_smooth)
 
-        peaks, _ = find_peaks(profondeur_hydraulique_smooth_array, distance=dist_pic, prominence=0.001)
-        valleys, _ = find_peaks(-profondeur_hydraulique_smooth_array, distance=dist_pic, prominence=0.001)
+        peaks, _ = find_peaks(profondeur_hydraulique_smooth_array, distance=dist_pic)
+        valleys, _ = find_peaks(-profondeur_hydraulique_smooth_array, distance=dist_pic)
 
         if peaks.any() and valleys.any():
             altitude_at_max_amplitude = None
@@ -63,10 +63,6 @@ def find_bankfull_M1(spline_results: list, directory_path, dist_pic) -> list:
     bankfull_max_amplitude.to_csv(df_output_path, sep=",", index=False)
     print(f"Les altitudes ont été exportées avec succès vers : {df_output_path}")
 
-    # Imprimer les amplitudes positives pour chaque transect
-    for transect, amplitudes in amplitudes_per_transect.items():
-        print(f"Transect {transect} - Amplitudes: {amplitudes}")
-
     return altitude_max_amplitudes, amplitudes_per_transect
 
 
@@ -92,8 +88,8 @@ def find_bankfull_M2(spline_results: list, directory_path, dist_pic) -> list:
         profondeur_hydraulique_smooth_np = np.array(profondeur_hydraulique_smooth)
         ref_altitude_smooth_np = np.array(ref_altitude_smooth)
 
-        maxima_smooth, _ = find_peaks(profondeur_hydraulique_smooth_np, distance=dist_pic, prominence=0.001)
-        minima_smooth, _ = find_peaks(-profondeur_hydraulique_smooth_np, distance=dist_pic, prominence=0.001)
+        maxima_smooth, _ = find_peaks(profondeur_hydraulique_smooth_np, distance=dist_pic)
+        minima_smooth, _ = find_peaks(-profondeur_hydraulique_smooth_np, distance=dist_pic)
 
         if maxima_smooth.size > 0 and minima_smooth.size > 0:
             if idx == 0:
