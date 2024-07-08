@@ -151,6 +151,8 @@ class bankfullJBDialog(QtWidgets.QDialog, FORM_CLASS):
             "prof_hydr_max_amplitude": self.label_calcul_OK_7,
             "prof_hydr_profils_precedents": self.label_calcul_OK_8,
             "lissage_courbure": self.label_calcul_OK_9,
+            "calcul_coord_3D": self.label_calcul_OK_10,
+            "export_limite": self.label_calcul_OK_11,
         }
 
         # --------------------------------------------------------------------------------
@@ -1287,6 +1289,9 @@ class bankfullJBDialog(QtWidgets.QDialog, FORM_CLASS):
     def call_coord_points_limites(self):
         pts_limites_results_list = self.pts_limites_results_list
         self.coord_points_limites(pts_limites_results_list)
+        self.labels_calcul_ok["calcul_coord_3D"].setText("Calcul terminé")
+        self.labels_calcul_ok["calcul_coord_3D"].setVisible(True)
+        self.timer_label.start(2000)
 
     def coord_points_limites(self, pts_limites_results_list):
         cross_section_data = pd.read_csv(
@@ -1346,6 +1351,9 @@ class bankfullJBDialog(QtWidgets.QDialog, FORM_CLASS):
             self.export_points_limite_prof_hydr_previous_transects()
         elif self.selected_algorithm == "curvature":
             self.export_points_limite_curvature()
+        self.labels_calcul_ok["export_limite"].setText("Export terminé")
+        self.labels_calcul_ok["export_limite"].setVisible(True)
+        self.timer_label.start(2000)
 
     def export_points_limites_shp(self, coords_3D_list, filename_prefix):
         # Exporter les points limites au format Shapefile
