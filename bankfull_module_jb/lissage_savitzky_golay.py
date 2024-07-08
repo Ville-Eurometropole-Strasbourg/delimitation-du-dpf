@@ -3,7 +3,14 @@ from scipy.signal import savgol_filter
 from scipy.signal import find_peaks
 
 
-def curve_Savitzky_Golay(curve_data, cross_section_data):
+def curve_Savitzky_Golay(
+    curve_data,
+    cross_section_data,
+    param_dist_curve,
+    param_height_curve,
+    param_prominence_curve,
+):
+
     # Grouper les données de courbure par x_sec_id
     grouped_data = curve_data.groupby("x_sec_id")
     # Grouper les données brutes par x_sec_id
@@ -23,11 +30,13 @@ def curve_Savitzky_Golay(curve_data, cross_section_data):
         # print("smoothed_curve :", smoothed_curve)
 
         first_derivative = np.gradient(smoothed_curve)
-        # second_derivative = np.gradient(first_derivative)
 
         # Détection des pics dans la courbe de courbure
         peaks, _ = find_peaks(
-            first_derivative, distance=1, height=0.001, prominence=0.001
+            first_derivative,
+            distance=param_dist_curve,
+            height=param_height_curve,
+            prominence=param_prominence_curve,
         )
         print(
             "Indices des pics de courbure détéctés:", peaks

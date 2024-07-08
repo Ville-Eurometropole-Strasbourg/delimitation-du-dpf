@@ -86,6 +86,9 @@ class bankfullJBDialog(QtWidgets.QDialog, FORM_CLASS):
             self.lineEdit_interp_nb_pts: "100",
             self.lineEdit_dist_max_min: "10",
             self.lineEdit_prominence: "0.01",
+            self.lineEdit_curve_param1: "10",
+            self.lineEdit_curve_param2: "0.1",
+            self.lineEdit_curve_param3: "0.1",
         }
         for le, default_value in le_config.items():
             le.setText(default_value)
@@ -115,6 +118,9 @@ class bankfullJBDialog(QtWidgets.QDialog, FORM_CLASS):
         self.all_projected_altitudes = None
         self.dist_pic = None
         self.prominence = None
+        self.param_dist_curve = None
+        self.param_height_curve = None
+        self.param_prominence_curve = None
         self.selected_points_data = []
         self.pts_limites_results_list = []
         self.coords_3D_list = []
@@ -136,15 +142,15 @@ class bankfullJBDialog(QtWidgets.QDialog, FORM_CLASS):
         self.timer_label.timeout.connect(self.hide_label_calcul_ok)
 
         self.labels_calcul_ok = {
-            'centerline': self.label_calcul_OK_1,
-            'profils': self.label_calcul_OK_2, 
-            'export_donnees_brutes': self.label_calcul_OK_3,
-            'export_donnes_courbure': self.label_calcul_OK_4,
-            'critere_filtrage': self.label_calcul_OK_5,
-            'calcul_prof_hydr': self.label_calcul_OK_6,
-            'prof_hydr_max_amplitude': self.label_calcul_OK_7, 
-            'prof_hydr_profils_precedents': self.label_calcul_OK_8, 
-            'lissage_courbure': self.label_calcul_OK_9
+            "centerline": self.label_calcul_OK_1,
+            "profils": self.label_calcul_OK_2,
+            "export_donnees_brutes": self.label_calcul_OK_3,
+            "export_donnes_courbure": self.label_calcul_OK_4,
+            "critere_filtrage": self.label_calcul_OK_5,
+            "calcul_prof_hydr": self.label_calcul_OK_6,
+            "prof_hydr_max_amplitude": self.label_calcul_OK_7,
+            "prof_hydr_profils_precedents": self.label_calcul_OK_8,
+            "lissage_courbure": self.label_calcul_OK_9,
         }
 
         # --------------------------------------------------------------------------------
@@ -242,7 +248,6 @@ class bankfullJBDialog(QtWidgets.QDialog, FORM_CLASS):
             self.selected_MNT_layer = QgsProject.instance().mapLayersByName(layer_name)[
                 0
             ]
-            print("Couche raster:", self.selected_MNT_layer)
 
     def update_polygon_layers(self):
         self.comboBox_polygon.clear()
@@ -263,7 +268,6 @@ class bankfullJBDialog(QtWidgets.QDialog, FORM_CLASS):
             self.selected_polygon_layer = QgsProject.instance().mapLayersByName(
                 layer_name
             )[0]
-            print("Couche polygone:", self.selected_polygon_layer)
 
     # --------------------------------------------------------------------------------
     # Système de coordonnées
@@ -323,8 +327,8 @@ class bankfullJBDialog(QtWidgets.QDialog, FORM_CLASS):
             print("Fichier ligne_centrale.gpkg ajouté dans le projet avec succès")
 
             # Afficher le QLabel approprié et démarrer le timer
-            self.labels_calcul_ok['centerline'].setText('Calcul terminé')
-            self.labels_calcul_ok['centerline'].setVisible(True)
+            self.labels_calcul_ok["centerline"].setText("Calcul terminé")
+            self.labels_calcul_ok["centerline"].setVisible(True)
             self.timer_label.start(2000)  # 2000 ms = 2 s
         else:
             print("Géométrie vide")
@@ -334,6 +338,7 @@ class bankfullJBDialog(QtWidgets.QDialog, FORM_CLASS):
         for label in self.labels_calcul_ok.values():
             label.setVisible(False)
         self.timer_label.stop()
+
     # ----------------------------------------------------------------------------------
     # -Calcul des transects perpendiculairement à la ligne centrale
     # ----------------------------------------------------------------------------------
@@ -346,9 +351,9 @@ class bankfullJBDialog(QtWidgets.QDialog, FORM_CLASS):
             transect_length, transect_spacing, self.directory_path, self.crs
         )
         # Afficher le QLabel approprié et démarrer le timer
-        self.labels_calcul_ok['profils'].setText('Calcul terminé')
-        self.labels_calcul_ok['profils'].setVisible(True)
-        self.timer_label.start(2000) 
+        self.labels_calcul_ok["profils"].setText("Calcul terminé")
+        self.labels_calcul_ok["profils"].setVisible(True)
+        self.timer_label.start(2000)
 
     # ----------------------------------------------------------------------------------
     # - Projection des transects sur le MNT
@@ -391,9 +396,9 @@ class bankfullJBDialog(QtWidgets.QDialog, FORM_CLASS):
         output_file_name = "cross_section_data.csv"
         export_data(df_transects, self.directory_path, output_file_name)
         # Afficher le QLabel approprié et démarrer le timer
-        self.labels_calcul_ok['export_donnees_brutes'].setText('Export terminé')
-        self.labels_calcul_ok['export_donnees_brutes'].setVisible(True)
-        self.timer_label.start(2000) 
+        self.labels_calcul_ok["export_donnees_brutes"].setText("Export terminé")
+        self.labels_calcul_ok["export_donnees_brutes"].setVisible(True)
+        self.timer_label.start(2000)
 
     def export_donnees_curve(self, checked: bool) -> None:
         """Export des données de courbure
@@ -402,9 +407,10 @@ class bankfullJBDialog(QtWidgets.QDialog, FORM_CLASS):
         df_transects = self.projection_mnt()
         output_file_name = "curve_data.csv"
         export_data(df_transects, self.directory_path, output_file_name)
-        self.labels_calcul_ok['export_donnees_courbure'].setText('Export terminé')
-        self.labels_calcul_ok['export_donnees_courbure'].setVisible(True)
-        self.timer_label.start(2000) 
+        self.labels_calcul_ok["export_donnes_courbure"].setText("Export terminé")
+        self.labels_calcul_ok["export_donnes_courbure"].setVisible(True)
+        self.timer_label.start(2000)
+
     # ----------------------------------------------------------------------------------
     # - Visualisation des transects dans la graphicsView
     # ----------------------------------------------------------------------------------
@@ -530,9 +536,9 @@ class bankfullJBDialog(QtWidgets.QDialog, FORM_CLASS):
         results_df = pd.DataFrame(results_list)
         df_output_path = os.path.join(self.directory_path, "area_trapezes.csv")
         results_df.to_csv(df_output_path, sep=",", index=False)
-        self.labels_calcul_ok['critere_filtrage'].setText('Filtrage terminé')
-        self.labels_calcul_ok['critere_filtrage'].setVisible(True)
-        self.timer_label.start(2000) 
+        self.labels_calcul_ok["critere_filtrage"].setText("Filtrage terminé")
+        self.labels_calcul_ok["critere_filtrage"].setVisible(True)
+        self.timer_label.start(2000)
 
     # 1. Calcul de l'indicateur de profondeur hydraulique pour chaque
     # altitude présente dans la liste de référence
@@ -543,8 +549,8 @@ class bankfullJBDialog(QtWidgets.QDialog, FORM_CLASS):
         largest_negative_area = CalculerProfHydr(area_trapezes_data)
         output_file = os.path.join(self.directory_path, "prof_hydr.csv")
         largest_negative_area.to_csv(output_file, index=False)
-        self.labels_calcul_ok['calcul_prof_hydr'].setText('Calcul terminé')
-        self.labels_calcul_ok['calcul_prof_hydr'].setVisible(True)
+        self.labels_calcul_ok["calcul_prof_hydr"].setText("Calcul terminé")
+        self.labels_calcul_ok["calcul_prof_hydr"].setVisible(True)
         self.timer_label.start(2000)
         print("DataFrame exporté avec succès vers", output_file)
 
@@ -667,9 +673,10 @@ class bankfullJBDialog(QtWidgets.QDialog, FORM_CLASS):
         find_bankfull_M1(
             self.spline_results, self.directory_path, self.dist_pic, self.prominence
         )
-        self.labels_calcul_ok['prof_hydr_max_amplitude'].setText('Calcul terminé')
-        self.labels_calcul_ok['prof_hydr_max_amplitude'].setVisible(True)
+        self.labels_calcul_ok["prof_hydr_max_amplitude"].setText("Calcul terminé")
+        self.labels_calcul_ok["prof_hydr_max_amplitude"].setVisible(True)
         self.timer_label.start(2000)
+
     # --------------------------------------------------------------------------------
     # Méthode 1b : Profils précédents
     # --------------------------------------------------------------------------------
@@ -677,9 +684,10 @@ class bankfullJBDialog(QtWidgets.QDialog, FORM_CLASS):
         find_bankfull_M2(
             self.spline_results, self.directory_path, self.dist_pic, self.prominence
         )
-        self.labels_calcul_ok['prof_hydr_profils_precedents'].setText('Calcul terminé')
-        self.labels_calcul_ok['prof_hydr_profils_precedents'].setVisible(True)
+        self.labels_calcul_ok["prof_hydr_profils_precedents"].setText("Calcul terminé")
+        self.labels_calcul_ok["prof_hydr_profils_precedents"].setVisible(True)
         self.timer_label.start(2000)
+
     # --------------------------------------------------------------------------------
     # Méthode 2 basée sur la courbure minimale du relief
     # --------------------------------------------------------------------------------
@@ -692,10 +700,20 @@ class bankfullJBDialog(QtWidgets.QDialog, FORM_CLASS):
         cross_section_data = pd.read_csv(
             os.path.join(self.directory_path, "cross_section_data.csv"), sep=","
         )
+        self.param_dist_curve = int(float(self.lineEdit_curve_param1.text()))
+        self.param_height_curve = int(float(self.lineEdit_curve_param2.text()))
+        self.param_prominence_curve = int(float(self.lineEdit_curve_param3.text()))
+        
         # Appliquer le lissage Savitzky-Golay aux données de courbure
-        self.transect_data = curve_Savitzky_Golay(curve_data, cross_section_data)
-        self.labels_calcul_ok['lissage_courbure'].setText('Calcul terminé')
-        self.labels_calcul_ok['lissage_courbure'].setVisible(True)
+        self.transect_data = curve_Savitzky_Golay(
+            curve_data,
+            cross_section_data,
+            self.param_dist_curve,
+            self.param_height_curve,
+            self.param_prominence_curve,
+        )
+        self.labels_calcul_ok["lissage_courbure"].setText("Calcul terminé")
+        self.labels_calcul_ok["lissage_courbure"].setVisible(True)
         self.timer_label.start(2000)
 
     # 2. Affichage des courbes lissées avec les divers pics sélectionnés
@@ -745,7 +763,7 @@ class bankfullJBDialog(QtWidgets.QDialog, FORM_CLASS):
                 ]["Distance"].to_numpy()
                 # Tracé de la courbe de courbure et des pics détectés
                 ax.plot(
-                    distance, alti, label="Profil en travers", zorder=1, color='#9A6200'
+                    distance, alti, label="Profil en travers", zorder=1, color="#9A6200"
                 )
                 ax.scatter(
                     projected_distances,
@@ -951,7 +969,9 @@ class bankfullJBDialog(QtWidgets.QDialog, FORM_CLASS):
         self.pts_limites_results_list = []
 
         for x_sec_id in x_sec_id_unique:
-            bankfull_values = data_bankfull[data_bankfull["x_sec_id"] == x_sec_id]["altitude"].values
+            bankfull_values = data_bankfull[data_bankfull["x_sec_id"] == x_sec_id][
+                "altitude"
+            ].values
             if bankfull_values.size > 0:
                 alti_bankfull_dict[x_sec_id] = bankfull_values[0]
             else:
@@ -1009,7 +1029,7 @@ class bankfullJBDialog(QtWidgets.QDialog, FORM_CLASS):
                 fig, ax = plt.subplots(figsize=(8, 6))  # Taille du graphique
                 alti = group_data["POINT_Z"].to_numpy()
                 distance = group_data["Distance"].to_numpy()
-                ax.plot(distance, alti, label="Profil en travers", color='#9A6200')
+                ax.plot(distance, alti, label="Profil en travers", color="#9A6200")
                 ax.set_title(
                     f"Profil en travers profil {group_name}",
                     fontsize=11,
@@ -1187,7 +1207,7 @@ class bankfullJBDialog(QtWidgets.QDialog, FORM_CLASS):
                 fig, ax = plt.subplots(figsize=(8, 6))  # Taille du graphique
                 alti = group_data["POINT_Z"].to_numpy()
                 distance = group_data["Distance"].to_numpy()
-                ax.plot(distance, alti, label="Profil en travers", color='#9A6200')
+                ax.plot(distance, alti, label="Profil en travers", color="#9A6200")
 
                 # Recherche du point sélectionné pour ce profil
                 selected_point = selected_points_data[
@@ -1302,7 +1322,9 @@ class bankfullJBDialog(QtWidgets.QDialog, FORM_CLASS):
                 right_x, right_y = interpolate_coords(
                     right_distance, distances, x_coords, y_coords
                 )
-                self.coords_3D_right_list.append((right_x, right_y, right_altitude))
+                self.coords_3D_right_list.append(
+                    (transect_id, right_x, right_y, right_altitude)
+                )
 
             # Interpoler les coordonnées pour le point limite gauche
             if left_point:
@@ -1313,6 +1335,7 @@ class bankfullJBDialog(QtWidgets.QDialog, FORM_CLASS):
                 self.coords_3D_left_list.append(
                     (transect_id, left_x, left_y, left_altitude)
                 )
+
         return self.coords_3D_left_list, self.coords_3D_right_list
 
     def exporter_points_limite(self):
@@ -1331,10 +1354,8 @@ class bankfullJBDialog(QtWidgets.QDialog, FORM_CLASS):
 
     def export_points_to_shapefile(self, coords_3D_list, filename):
         output_shapefile_path = os.path.join(self.directory_path, filename)
-        geometries = [Point(x, y, z) for _, x, y, z in coords_3D_list]  # Change here
-        transect_id, x_col, y_col, z_col = zip(
-            *[(transect_id, x, y, z) for transect_id, x, y, z in coords_3D_list]
-        )
+        geometries = [Point(x, y, z) for _, x, y, z in coords_3D_list]
+        transect_id, x_col, y_col, z_col = zip(*coords_3D_list)
         gdf = gpd.GeoDataFrame(
             {
                 "id": transect_id,
@@ -1397,7 +1418,7 @@ class bankfullJBDialog(QtWidgets.QDialog, FORM_CLASS):
         )
 
     def export_lines_between_points(self, coords_3D_list, filename_prefix):
-        lines = [LineString(coords_3D_list)]
+        lines = [LineString([(x, y, z) for _, x, y, z in coords_3D_list])]
 
         gdf = gpd.GeoDataFrame(geometry=lines)
         output_shapefile_path = os.path.join(
