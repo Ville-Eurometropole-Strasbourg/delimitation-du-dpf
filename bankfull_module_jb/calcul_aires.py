@@ -4,12 +4,25 @@ from scipy.spatial.distance import euclidean
 import matplotlib.pyplot as plt
 
 
-def calculer_aire(dist, alti, alti_ref, filtrage_aires):
-    """Calcul des aires entre deux courbes
-    :param dist: Liste des distances le long du profil en travers
-    :param alti: Liste des altitudes du profils en travers
-    :param alti_ref: Liste des altitudes uniques triées dans l'ordre croissant
-    :param filtrage_aires: Critère de filtrage"""
+def calculer_aire(
+    dist: list, alti: list, alti_ref: list, filtrage_aires: float
+) -> list:
+    """
+    Calcul des aires entre deux courbes.
+    Les aires sont calculées et filtrées selon un critère spécifié par l'utilisateur.
+
+    :param dist: Liste des distances le long du profil en travers.
+    :param alti: Liste des altitudes du profil en travers.
+    :param alti_ref: Liste des altitudes uniques triées dans l'ordre croissant.
+    :param filtrage_aires: Critère de filtrage des aires (aire minimale à considérer).
+
+    :return: Liste de tuples contenant pour chaque altitude de référence :
+             - Indice de l'altitude de référence.
+             - Liste des aires calculées (au-dessus ou en-dessous de la référence).
+             - Liste des distances entre les points d'intersection.
+             - Altitude de référence.
+             - Liste des indices des points d'intersection.
+    """
 
     areas_iteration = []
 
@@ -22,8 +35,8 @@ def calculer_aire(dist, alti, alti_ref, filtrage_aires):
         dist_interp = np.linspace(min(dist), max(dist), 1000)
         alti_d1_interp = interp1d(dist, alti, kind="linear")(dist_interp)
         alti_dref_interp = interp1d(dist_dref, alti_dref, kind="linear")(dist_interp)
-    
         # Recherche des indices des points d'intersection entre les deux courbes
+
         intersection_indices = (
             np.where(np.diff(np.sign(alti_d1_interp - alti_dref_interp)))[0] + 1
         )
@@ -31,7 +44,7 @@ def calculer_aire(dist, alti, alti_ref, filtrage_aires):
         intersection_points = []
         distances = []
         intersection_indices_list = []
-        
+
         # Vérification si au moins 1 intersection trouvée
         if len(intersection_indices) > 0:
             intersection_indices = np.insert(intersection_indices, 0, 0)
@@ -94,7 +107,7 @@ def calculer_aire(dist, alti, alti_ref, filtrage_aires):
                         alti_dref_interp[start_idx],
                         alti_d1_interp[start_idx],
                     )
-                    
+
                     intersection_points.append(intersection_point)
                     intersection_indices_list.append(start_idx)
                     if start_idx != end_idx:

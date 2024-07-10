@@ -1,15 +1,33 @@
 import numpy as np
+import pandas as pd
 from scipy.signal import savgol_filter
 from scipy.signal import find_peaks
 
 
 def curve_Savitzky_Golay(
-    curve_data,
-    cross_section_data,
-    param_dist_curve,
-    param_height_curve,
-    param_prominence_curve,
-):
+    curve_data: pd.DataFrame,
+    cross_section_data: pd.DataFrame,
+    param_dist_curve: float,
+    param_height_curve: float,
+    param_prominence_curve: float,
+) -> list:
+    """
+    Applique le filtre Savitzky-Golay pour lisser les données de courbure
+    le long de chaque transect, détecte les pics de courbure significatifs et
+    projette les points correspondants sur le profil en travers.
+
+    :param curve_data: Données de courbure par profil.
+    :param cross_section_data: Données des profil en travers.
+    :param param_dist_curve: Distance minimale entre les pics de courbure détectés.
+    :param param_height_curve: Hauteur minimale des pics de courbure détectés.
+    :param param_prominence_curve: Prominence minimale des pics de courbure détectés.
+
+    :return: Liste de tuples contenant les données projetées pour chaque transect:
+             (x_sec_id, projected_distances, projected_altitudes).
+             - x_sec_id: Identifiant du transect.
+             - projected_distances: Distances projetées des pics sur le profil.
+             - projected_altitudes: Altitudes correspondantes des pics projetés.
+    """
 
     # Grouper les données de courbure par x_sec_id
     grouped_data = curve_data.groupby("x_sec_id")
@@ -42,7 +60,7 @@ def curve_Savitzky_Golay(
             "Indices des pics de courbure détéctés:", peaks
         )  # Afficher les pics détectés
 
-        # Filtrage des pics qui correspondent à des surfaces en eau (courbure proche de 0)
+        # Filtrage des pics qui correspondent à des surfaces en eau
         filtered_peaks = [peak for peak in peaks if abs(smoothed_curve[peak]) > 0.001]
         print(
             "Indices des pics filtrés hors des zones en eau:", filtered_peaks
@@ -58,7 +76,7 @@ def curve_Savitzky_Golay(
         river_center = cross_section_group[cross_section_group["RivCentre"] == True]
         river_banks = cross_section_group[cross_section_group["RivCentre"] == False]
 
-        # Calcul de la moyenne des altitudes avant et après le point central du cours d'eau
+        # Calcul de la moyenne des altitudes avant et après le point central
         mean_altitude_before = river_banks[
             river_banks["Distance"] < river_center.iloc[0]["Distance"]
         ]["POINT_Z"].mean()

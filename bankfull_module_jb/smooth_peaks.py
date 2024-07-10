@@ -5,8 +5,21 @@ from scipy.signal import find_peaks
 from scipy.interpolate import make_interp_spline
 
 
-def CalculerPeaks(dist_pic, pts_interp, prominence, directory_path):
-    """Lissage d'une courbe et calcul des minimums et maximums locaux"""
+def CalculerPeaks(
+        dist_pic: float, pts_interp: int, prominence: float, directory_path: str
+) -> tuple:
+    """
+    Lissage d'une courbe et calcul des minimums et maximums locaux.
+
+    :param dist_pic: Distance minimale entre les pics de profondeur hydraulique.
+    :param pts_interp: Nombre de points pour l'interpolation de la courbe lissée.
+    :param prominence: Prominence minimale des pics de profondeur hydraulique détectés.
+    :param directory_path: Chemin du répertoire contenant le fichier "prof_hydr.csv".
+
+    :return: Tuple contenant deux listes :
+        - Liste de tuples représentant les résultats du lissage de la courbe.
+        - Liste de listes représentant les données des pics détectés.
+    """
 
     # Récupération des données présentes dans la DataFrame "prof_hydr.csv"
     prof_hydr_data = pd.read_csv(os.path.join(directory_path, "prof_hydr.csv"))

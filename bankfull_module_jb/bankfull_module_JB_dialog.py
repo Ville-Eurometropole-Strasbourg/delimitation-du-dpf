@@ -49,8 +49,7 @@ from shapely.geometry import Point, LineString
 from shapely import reverse
 from shapely.ops import linemerge
 from shapely.wkb import loads as load_wkb
-from scipy.interpolate import interp1d, make_interp_spline
-from scipy.signal import find_peaks
+from scipy.interpolate import interp1d
 from .calcul_aires import calculer_aire
 from .calcul_prof_hydr import CalculerProfHydr
 from .export_dataframe import export_data
@@ -605,8 +604,7 @@ class bankfullJBDialog(QtWidgets.QDialog, FORM_CLASS):
                 profondeur_hydraulique = group_data["profondeur_hydraulique"].to_numpy()
                 ax.scatter(ref_altitude, profondeur_hydraulique, color="#236B8E", s=2)
                 ax.set_title(
-                    f"Profondeur hydraulique en fonction" f" de l'altitude",
-                    fontsize=11,
+                    "Profondeur hydraulique en fonction de l'altitude", fontsize=11
                 )
                 ax.set_xlabel("Altitude (m)", fontsize=11)
                 ax.set_ylabel("Profondeur Hydraulique", fontsize=11)
@@ -705,7 +703,7 @@ class bankfullJBDialog(QtWidgets.QDialog, FORM_CLASS):
         self.param_dist_curve = int(float(self.lineEdit_curve_param1.text()))
         self.param_height_curve = int(float(self.lineEdit_curve_param2.text()))
         self.param_prominence_curve = int(float(self.lineEdit_curve_param3.text()))
-        
+
         # Appliquer le lissage Savitzky-Golay aux données de courbure
         self.transect_data = curve_Savitzky_Golay(
             curve_data,
@@ -857,7 +855,10 @@ class bankfullJBDialog(QtWidgets.QDialog, FORM_CLASS):
             for point in self.annotated_points:
                 if point[0] == transect_id and point[1] == point_index:
                     print(
-                        f"Point conservé : Transect ID = {transect_id}, Point Index = {point_index}, Distance = {point[2]}, Altitude = {point[3]}"
+                        f"Point conservé : Transect ID = {transect_id},"
+                        "Point Index = {point_index},"
+                        "Distance = {point[2]},"
+                        "Altitude = {point[3]}"
                     )
                     # Stocker les informations du point conservé dans la liste
                     self.selected_points_data.append(
@@ -873,7 +874,8 @@ class bankfullJBDialog(QtWidgets.QDialog, FORM_CLASS):
             print("Point non trouvé. Veuillez vérifier l'identifiant du point.")
         except ValueError:
             print(
-                "Identifiant du point invalide. Veuillez entrer un identifiant au format correct."
+                "Identifiant du point invalide."
+                "Veuillez entrer un identifiant au format correct."
             )
 
     def exporter_dataframe_csv(self, filename):
@@ -1018,7 +1020,7 @@ class bankfullJBDialog(QtWidgets.QDialog, FORM_CLASS):
         # Création de la scène
         scene = QtWidgets.QGraphicsScene()
 
-        # Boucle sur les groupes de données pour créer les graphiques uniquement pour les indices visibles
+        # Boucle sur les groupes de données
         for group_name, group_data in cross_section_data.groupby("x_sec_id"):
             # Vérifier si l'indice actuel est dans la plage visible
             if start_index <= group_name < end_index:
@@ -1197,7 +1199,7 @@ class bankfullJBDialog(QtWidgets.QDialog, FORM_CLASS):
                     (group_name, left_intersection, right_intersection)
                 )
 
-        # Boucle sur les groupes de données pour créer les graphiques uniquement pour les indices visibles
+        # Boucle sur les groupes de données
         for group_name, group_data in cross_section_data.groupby("x_sec_id"):
             # Vérifier si l'indice actuel est dans la plage visible
             if start_index <= group_name < end_index:
@@ -1224,12 +1226,16 @@ class bankfullJBDialog(QtWidgets.QDialog, FORM_CLASS):
                         s=40,
                         label="Point conservé",
                     )
-                    # Tracer une droite horizontale passant par le point sélectionné
+                    altitude_value = selected_point["altitude"].iloc[0]
+                    label_text = (
+                        f'Altitude conservé: {altitude_value}'
+                    )
+
                     ax.axhline(
-                        y=selected_point["altitude"].iloc[0],
+                        y=altitude_value,
                         color="black",
                         linestyle="--",
-                        label=f'Altitude conservé: {selected_point["altitude"].iloc[0]}',
+                        label=label_text
                     )
 
                     # Tracer les points d'intersection
@@ -1283,9 +1289,10 @@ class bankfullJBDialog(QtWidgets.QDialog, FORM_CLASS):
 
     # créer une nouvelle liste pour exporter les point selectionne du fichier csv ?
 
-    # --------------------------------------------------------------------------------------------------------
-    # Calcul des points de la limite en fonction de la méthode retenue pour le choix du niveau de débordement
-    # --------------------------------------------------------------------------------------------------------
+    # --------------------------------------------------------------------------
+    # Calcul des points de la limite en fonction de la méthode
+    # retenue pour le choix du niveau de débordement
+    # --------------------------------------------------------------------------
     def call_coord_points_limites(self):
         pts_limites_results_list = self.pts_limites_results_list
         self.coord_points_limites(pts_limites_results_list)
@@ -1355,9 +1362,9 @@ class bankfullJBDialog(QtWidgets.QDialog, FORM_CLASS):
         self.labels_calcul_ok["export_limite"].setVisible(True)
         self.timer_label.start(2000)
 
-    def export_points_limites_shp(self, coords_3D_list, filename_prefix):
-        # Exporter les points limites au format Shapefile
-        filename = filename_prefix + ".shp"
+    def export_points_limites_gpkg(self, coords_3D_list, filename_prefix):
+        # Exporter les points limites au format GeoPackage
+        filename = filename_prefix + ".gpkg"
         self.export_points_to_shapefile(coords_3D_list, filename)
 
     def export_points_to_shapefile(self, coords_3D_list, filename):
@@ -1391,8 +1398,8 @@ class bankfullJBDialog(QtWidgets.QDialog, FORM_CLASS):
     def export_points_limite_prof_hydr_max_amplitude(self):
         left_filename = "points_limite_prof_hydr_max_amplitude_left"
         right_filename = "points_limite_prof_hydr_max_amplitude_right"
-        self.export_points_limites_shp(self.coords_3D_left_list, left_filename)
-        self.export_points_limites_shp(self.coords_3D_right_list, right_filename)
+        self.export_points_limites_gpkg(self.coords_3D_left_list, left_filename)
+        self.export_points_limites_gpkg(self.coords_3D_right_list, right_filename)
         self.export_lines_between_points(
             self.coords_3D_left_list, "ligne_limite_gauche_prof_hydr_max_amplitude"
         )
@@ -1403,8 +1410,8 @@ class bankfullJBDialog(QtWidgets.QDialog, FORM_CLASS):
     def export_points_limite_prof_hydr_previous_transects(self):
         left_filename = "points_limite_prof_hydr_previous_transects_left"
         right_filename = "points_limite_prof_hydr_previous_transects_right"
-        self.export_points_limites_shp(self.coords_3D_left_list, left_filename)
-        self.export_points_limites_shp(self.coords_3D_right_list, right_filename)
+        self.export_points_limites_gpkg(self.coords_3D_left_list, left_filename)
+        self.export_points_limites_gpkg(self.coords_3D_right_list, right_filename)
         self.export_lines_between_points(
             self.coords_3D_left_list, "ligne_limite_gauche_prof_hydr_previous_transects"
         )
@@ -1416,8 +1423,8 @@ class bankfullJBDialog(QtWidgets.QDialog, FORM_CLASS):
     def export_points_limite_curvature(self):
         left_filename = "points_limite_curvature_left"
         right_filename = "points_limite_curvature_right"
-        self.export_points_limites_shp(self.coords_3D_left_list, left_filename)
-        self.export_points_limites_shp(self.coords_3D_right_list, right_filename)
+        self.export_points_limites_gpkg(self.coords_3D_left_list, left_filename)
+        self.export_points_limites_gpkg(self.coords_3D_right_list, right_filename)
         self.export_lines_between_points(
             self.coords_3D_left_list, "limite_gauche_curvature"
         )
@@ -1429,22 +1436,23 @@ class bankfullJBDialog(QtWidgets.QDialog, FORM_CLASS):
         lines = [LineString([(x, y, z) for _, x, y, z in coords_3D_list])]
 
         gdf = gpd.GeoDataFrame(geometry=lines)
-        output_shapefile_path = os.path.join(
-            self.directory_path, filename_prefix + ".shp"
+        output_gpkg_path = os.path.join(
+            self.directory_path, filename_prefix + ".gpkg"
         )
         crs = {"init": "epsg:3948"}
-        gdf.to_file(output_shapefile_path, crs=crs)
+        gdf.to_file(output_gpkg_path, crs=crs)
         print(
-            f"Fichier Shapefile de lignes exporté avec succès : {output_shapefile_path}"
+            f"Fichier GeoPackage exporté avec succès : {output_gpkg_path}"
         )
 
         layer = QgsVectorLayer(
-            output_shapefile_path, os.path.splitext(filename_prefix)[0], "ogr"
+            output_gpkg_path, os.path.splitext(filename_prefix)[0], "ogr"
         )
         if not layer.isValid():
             print("La couche de lignes n'est pas valide.")
         else:
             QgsProject.instance().addMapLayer(layer)
             print(
-                f"Couche de lignes {os.path.splitext(filename_prefix)[0]} ajoutée au projet avec succès"
+                f"Couche de lignes {os.path.splitext(filename_prefix)[0]}"
+                "ajoutée au projet avec succès"
             )

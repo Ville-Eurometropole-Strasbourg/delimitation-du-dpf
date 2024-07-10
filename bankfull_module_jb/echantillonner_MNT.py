@@ -1,16 +1,25 @@
 import pandas as pd
-from qgis.core import QgsPointXY, QgsRaster, QgsGeometry
+from qgis.core import (
+    QgsPointXY,
+    QgsRaster,
+    QgsGeometry,
+    QgsVectorLayer,
+    QgsRasterLayer,
+)
 
 
-def nearest_points_RivCentre(centerline_layer, points_transects):
+def nearest_points_RivCentre(
+    centerline_layer: QgsVectorLayer, points_transects: list
+) -> list:
     """
-    Trouve le point le plus proche sur la couche de ligne centrale pour chaque point de transect.
+    Trouve le point le plus proche de la ligne centrale pour chaque profil.
 
-    :param centerline_layer: (QgsVectorLayer) Couche de ligne centrale.
-    :param points_transects: (list) Liste de tuples contenant les coordonnées des points de transect.
+    :param centerline_layer: QgsVectorLayer - Couche de la ligne centrale.
+    :param points_transects: list - Liste de tuples contenant les coordonnées
+                                 des points des profils.
 
-    :return: (tuple) Tuple contenant l'indice du point de transect le plus proche sur la ligne centrale
-        et les coordonnées de ce point.
+    :return: list - Liste de tuples contenant l'indice du point du profil le plus proche
+                   sur la ligne centrale et les coordonnées de ce point.
     """
 
     nearest_point_index = None
@@ -22,12 +31,13 @@ def nearest_points_RivCentre(centerline_layer, points_transects):
         # Convertir le point en objet QgsGeometry
         point_geometry = QgsGeometry.fromPointXY(point)
 
-        # Parcourir toutes les entités de la couche centerline_layer pour trouver la plus proche
+        # Parcourir toutes les entités de la couche de la ligne centrale
         for feature in centerline_layer.getFeatures():
             centerline_geometry = feature.geometry()
             # Calculer la distance entre le point et la ligne centrale
             distance = centerline_geometry.distance(point_geometry)
-            # Mise à jour de l'index du point le plus proche si la distance actuelle est plus petite
+            # Mise à jour de l'index du point le plus proche
+            # si la distance actuelle est plus petite
             if distance < min_distance:
                 nearest_point_index = i
                 min_distance = distance
@@ -35,15 +45,18 @@ def nearest_points_RivCentre(centerline_layer, points_transects):
     return nearest_point_index, nearest_points
 
 
-def echantillonner_mnt(transect, mnt, nb_pts):
+def echantillonner_mnt(
+        transect: QgsVectorLayer, mnt: QgsRasterLayer, nb_pts: int
+) -> list:
     """
     Échantillonne le modèle numérique de terrain (MNT) le long du transect.
 
-    :param transect: (QgsGeometry) Géométrie du transect.
-    :param mnt: (QgsRasterLayer) Couche du modèle numérique de terrain (MNT).
-    :param nb_pts: (int) Nombre de points à échantillonner le long du transect.
+    :param transect: Géométrie du transect.
+    :param mnt: Couche du modèle numérique de terrain (MNT).
+    :param nb_pts: Nombre de points à échantillonner le long du transect.
 
-    :return: (list) Liste de tuples contenant les coordonnées 3D des points échantillonnés le long du transect.
+    :return: (list) Liste de tuples contenant les coordonnées 3D
+            des points échantillonnés le long du transect.
     """
 
     if transect is None:  # Vérification si la géométrie de la tranche est nulle
@@ -73,16 +86,21 @@ def echantillonner_mnt(transect, mnt, nb_pts):
 
 
 def ProjectionMNT(
-    transect_layers, centerline_layers, transect_length, selected_MNT_layer
-):
+    transect_layers: QgsVectorLayer,
+    centerline_layers: QgsVectorLayer,
+    transect_length: float,
+    selected_MNT_layer: QgsRasterLayer,
+) -> pd.DataFrame:
     """
-    Trouve le point le plus proche sur la couche de ligne centrale pour chaque point de transect.
+    Trouve le point le plus proche sur la couche de ligne centrale
+    pour chaque point du profil en travers.
 
-    :param centerline_layer: (QgsVectorLayer) Couche de ligne centrale.
-    :param points_transects: (list) Liste de tuples contenant les coordonnées des points de transect.
+    :param centerline_layer: Couche de ligne centrale.
+    :param points_transects: Liste de tuples contenant les coordonnées des
+                            points du profil.
 
-    :return: (tuple) Tuple contenant l'indice du point de transect le plus proche sur la ligne centrale
-        et les coordonnées de ce point.
+    :return: DataFrame contenant l'indice du point du profil le plus proche de
+            la ligne centrale et les coordonnées de ce point.
     """
     transect_layer = transect_layers[0]
     centerline_layer = centerline_layers[0]

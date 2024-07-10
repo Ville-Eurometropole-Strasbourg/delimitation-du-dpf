@@ -2,16 +2,16 @@ import os
 
 import geopandas as gpd
 from centerline.geometry import Centerline
-from shapely.geometry import LineString, Point, MultiLineString
+from shapely.geometry import Point
 from shapely.ops import linemerge
 
 
-def calculate_centerline(gdf):
+def calculate_centerline(gdf: gpd.GeoDataFrame) -> gpd.GeoDataFrame:
     """
-    Calcul de la ligne centrale pour le premier polygone d'un GeoDataFrame.
+    Calcul de la ligne centrale d'un polygone.
 
-    :param gdf: GeoDataFrame contenant des polygones
-    :return: GeoDataFrame contenant la ligne centrale et le nombre de lignes
+    :param gdf: GeoDataFrame contenant le polygone.
+    :return: GeoDataFrame contenant la ligne centrale.
     """
     # Sélection du premier polygone du GeoDataFrame
     polygon = gdf.geometry.iloc[0]
@@ -27,19 +27,19 @@ def calculate_centerline(gdf):
         geometry=[line for line in centerline.geometry.geoms]
     )
 
-    # Nombre total de lignes en sortie
-    lines_number = len(centerline_gdf)
+    return centerline_gdf
 
-    return (centerline_gdf, lines_number)
 
-def clean_centerline(centerline_gdf, crs, directory_path):
+def clean_centerline(
+    centerline_gdf: gpd.GeoDataFrame, crs: str, directory_path: str
+) -> gpd.GeoDataFrame:
     """
     Nettoie la ligne centrale pour enlever les extrémités isolées ou non connectées.
 
     :param centerline_gdf: GeoDataFrame contenant la ligne centrale
     :param crs: Système de coordonnées
     :param directory_path: Chemin vers le répertoire d'enregistrement
-    :return: Tuple contenant le GeoDataFrame nettoyé
+    :return: GeoDataFrame de la ligne centrale nettoyée
     """
     # Nettoyage de la ligne centrale
     merged_line = linemerge(centerline_gdf.geometry.unary_union)
@@ -69,9 +69,11 @@ def clean_centerline(centerline_gdf, crs, directory_path):
         and Point(line.coords[-1]) not in dangles
     ]
     merged_filtered_line = linemerge(filtered_lines)
-    merged_filtered_gdf = gpd.GeoDataFrame({"geometry": [merged_filtered_line]}, crs=crs)
-    
+    merged_filtered_gdf = gpd.GeoDataFrame(
+        {"geometry": [merged_filtered_line]}, crs=crs
+    )
+
     output_shapefile_path = os.path.join(directory_path, "clean_centerline.shp")
     merged_filtered_gdf.to_file(output_shapefile_path, driver="ESRI Shapefile")
 
-    return merged_filtered_gdf, output_shapefile_path
+    return merged_filtered_gdf
