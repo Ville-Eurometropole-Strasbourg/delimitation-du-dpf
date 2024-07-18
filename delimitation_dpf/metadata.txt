@@ -3,7 +3,7 @@
 # This file should be included when you package your plugin.# Mandatory items:
 
 [general]
-name=bankfull_estimation_JB
+name=delimitation_DPF
 qgisMinimumVersion=3.0
 description=This plugin estimates bankfull
 version=0.1
@@ -12,8 +12,8 @@ email=juliettebrochier69@gmail.com
 
 about=Estimation of bankfull by using several methods
 
-tracker=http://bugs
-repository=http://repo
+tracker=https://gitlab.strasbourg.cloud/sgct/delimitation-du-dpf/-/issues
+repository=https://gitlab.strasbourg.cloud/sgct/delimitation-du-dpf
 # End of mandatory metadata
 
 # Recommended items:
@@ -25,7 +25,7 @@ hasProcessingProvider=no
 # Tags are comma separated with spaces allowed
 tags=python
 
-homepage=http://homepage
+homepage=https://gitlab.strasbourg.cloud/sgct/delimitation-du-dpf
 category=Plugins
 icon=bankfull.png
 # experimental flag

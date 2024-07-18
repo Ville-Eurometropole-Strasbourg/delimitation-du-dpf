@@ -28,10 +28,10 @@ from qgis.PyQt.QtGui import QIcon
 from qgis.PyQt.QtWidgets import QAction
 
 # Import the code for the dialog
-from bankfull_module_jb.bankfull_module_JB_dialog import bankfullJBDialog
+from delimitation_dpf.bankfull_module_JB_dialog import bankfullJBDialog
 
 # Initialize Qt resources from file resources.py
-from bankfull_module_jb.resources import *  # noqa: F401, F403
+from delimitation_dpf.resources import *  # noqa: F401, F403
 
 
 class bankfullJB:
@@ -62,7 +62,7 @@ class bankfullJB:
 
         # Declare instance attributes
         self.actions = []
-        self.menu = self.tr("&bankfull_estimation_JB")
+        self.menu = self.tr("&Délimitation DPF")
 
         # Check if plugin was started the first time in current QGIS session
         # Must be set in initGui() to survive plugin reloads
@@ -170,10 +170,10 @@ class bankfullJB:
     def initGui(self):
         """Create the menu entries and toolbar icons inside the QGIS GUI."""
 
-        icon_path = ":/plugins/bankfull_module_JB/bankfull.png"
+        icon_path = ":/plugins/delimitation_dpf/bankfull.png"
         self.add_action(
             icon_path,
-            text=self.tr("Bankfull detection"),
+            text=self.tr("delimitation_DPF"),
             callback=self.run,
             parent=self.iface.mainWindow(),
         )
@@ -200,7 +200,7 @@ class bankfullJB:
     def unload(self):
         """Removes the plugin menu item and icon from QGIS GUI."""
         for action in self.actions:
-            self.iface.removePluginMenu(self.tr("&bankfull_estimation_JB"), action)
+            self.iface.removePluginMenu(self.tr("&Délimitation DPF"), action)
             self.iface.removeToolBarIcon(action)
 
     def run(self):
@@ -222,13 +222,3 @@ class bankfullJB:
             # Do something useful here - delete the line containing pass and
             # substitute with your code.
             pass
-
-
-# -----------------------------------------------------------------------------------------
-
-# -----------------------------------------------------------------------------------------
-# - Calcul de la ligne centrale
-# -----------------------------------------------------------------------------------------
-# -----------------------------------------------------------------------------------------
-# - Génération des transects
-# -----------------------------------------------------------------------------------------

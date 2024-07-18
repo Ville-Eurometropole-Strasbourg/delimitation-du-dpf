@@ -1,5 +1,5 @@
 <RCC>
-    <qresource prefix="/plugins/bankfull_module_JB" >
+    <qresource prefix="/plugins/delimitation_dpf" >
         <file>bankfull.png</file>
     </qresource>
 </RCC>

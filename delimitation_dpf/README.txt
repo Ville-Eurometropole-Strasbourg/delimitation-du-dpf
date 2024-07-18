@@ -1,7 +1,7 @@
 Plugin Builder Results
 
 Your plugin bankfullJB was created in:
-    S:\Commun\STAGIAIRE\2024_Juliette_BROCHIER\plugin\bankfull_module_jb
+    S:\Commun\STAGIAIRE\2024_Juliette_BROCHIER\plugin\delimitation_dpf
 
 Your QGIS plugin directory is located at:
     C:/Users/444394/AppData/Roaming/QGIS/QGIS3//profiles/default/python/plugins
