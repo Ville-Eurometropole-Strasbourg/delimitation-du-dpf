@@ -454,7 +454,8 @@ class bankfullJBDialog(QtWidgets.QDialog, FORM_CLASS):
                 ax.set_facecolor((0.56, 0.93, 0.56, 0.10))
                 ax.scatter(distance, altitude, color="black", s=2)
                 ax.set_title(
-                    f"Profil en travers n°{group_name}", fontsize=11,
+                    f"Profil en travers n°{group_name}",
+                    fontsize=11,
                 )
                 ax.set_xlabel("Distance (m)", fontsize=11)
                 ax.set_ylabel("Altitude (m)", fontsize=11)
@@ -1229,15 +1230,13 @@ class bankfullJBDialog(QtWidgets.QDialog, FORM_CLASS):
                         s=40,
                     )
                     altitude_value = selected_point["altitude"].iloc[0]
-                    label_text = (
-                        f'Altitude conservé: {altitude_value}'
-                    )
+                    label_text = f"Altitude conservé: {altitude_value}"
 
                     ax.axhline(
                         y=altitude_value,
                         color="black",
                         linestyle="--",
-                        label=label_text
+                        label=label_text,
                     )
 
                     # Tracer les points d'intersection
@@ -1438,14 +1437,10 @@ class bankfullJBDialog(QtWidgets.QDialog, FORM_CLASS):
         lines = [LineString([(x, y, z) for _, x, y, z in coords_3D_list])]
 
         gdf = gpd.GeoDataFrame(geometry=lines)
-        output_gpkg_path = os.path.join(
-            self.directory_path, filename_prefix + ".gpkg"
-        )
+        output_gpkg_path = os.path.join(self.directory_path, filename_prefix + ".gpkg")
         crs = {"init": "epsg:3948"}
         gdf.to_file(output_gpkg_path, crs=crs)
-        print(
-            f"Fichier GeoPackage exporté avec succès : {output_gpkg_path}"
-        )
+        print(f"Fichier GeoPackage exporté avec succès : {output_gpkg_path}")
 
         layer = QgsVectorLayer(
             output_gpkg_path, os.path.splitext(filename_prefix)[0], "ogr"

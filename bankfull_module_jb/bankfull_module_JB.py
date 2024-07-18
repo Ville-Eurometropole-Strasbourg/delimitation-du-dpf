@@ -23,7 +23,7 @@
 """
 import os.path
 
-from qgis.PyQt.QtCore import QCoreApplication, QSettings, QTranslator, qVersion
+from qgis.PyQt.QtCore import QCoreApplication, QSettings, QTranslator
 from qgis.PyQt.QtGui import QIcon
 from qgis.PyQt.QtWidgets import QAction
 
@@ -31,7 +31,7 @@ from qgis.PyQt.QtWidgets import QAction
 from bankfull_module_jb.bankfull_module_JB_dialog import bankfullJBDialog
 
 # Initialize Qt resources from file resources.py
-from bankfull_module_jb.resources import *
+from bankfull_module_jb.resources import *  # noqa: F401, F403
 
 
 class bankfullJB:
@@ -207,7 +207,7 @@ class bankfullJB:
         """Run method that performs all the real work"""
 
         # Create the dialog with elements (after translation) and keep reference
-        # Only create GUI ONCE in callback, so that it will only 
+        # Only create GUI ONCE in callback, so that it will only
         # load when the plugin is started
         if self.first_start == True:
             self.first_start = False
