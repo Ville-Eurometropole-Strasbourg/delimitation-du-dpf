@@ -5,7 +5,7 @@
 [general]
 name=delimitation_DPF
 qgisMinimumVersion=3.0
-description=This plugin estimates bankfull
+description=Ce plugin, développé dans le cadre d'un projet de recherche, permet de détecter automatiquement les limites du domaine public fluvial au droit de sections transversales.
 version=0.1
 author=Brochier Juliette
 email=juliettebrochier69@gmail.com
