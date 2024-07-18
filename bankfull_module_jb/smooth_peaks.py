@@ -6,7 +6,7 @@ from scipy.interpolate import make_interp_spline
 
 
 def CalculerPeaks(
-        dist_pic: float, pts_interp: int, prominence: float, directory_path: str
+    dist_pic: float, pts_interp: int, prominence: float, directory_path: str
 ) -> tuple:
     """
     Lissage d'une courbe et calcul des minimums et maximums locaux.

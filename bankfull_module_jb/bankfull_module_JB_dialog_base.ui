@@ -1207,7 +1207,11 @@
         </widget>
        </item>
        <item row="26" column="2">
-        <widget class="QLineEdit" name="lineEdit_id_pt_conserver"/>
+        <widget class="QLineEdit" name="lineEdit_id_pt_conserver">
+         <property name="alignment">
+          <set>Qt::AlignCenter</set>
+         </property>
+        </widget>
        </item>
        <item row="4" column="3">
         <widget class="QLineEdit" name="lineEdit_curve_param2">

@@ -34,7 +34,6 @@ import pygeoops
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from PyQt5 import QtCore, QtWidgets
 from PyQt5.QtCore import QTimer
-from PyQt5.QtWidgets import QMessageBox
 from qgis.gui import QgsFileWidget
 from qgis.PyQt import uic
 from qgis.core import (
@@ -86,8 +85,8 @@ class bankfullJBDialog(QtWidgets.QDialog, FORM_CLASS):
             self.lineEdit_dist_max_min: "10",
             self.lineEdit_prominence: "0.01",
             self.lineEdit_curve_param1: "10",
-            self.lineEdit_curve_param2: "0.1",
-            self.lineEdit_curve_param3: "0.1",
+            self.lineEdit_curve_param2: "0.01",
+            self.lineEdit_curve_param3: "0.01",
         }
         for le, default_value in le_config.items():
             le.setText(default_value)
@@ -102,11 +101,11 @@ class bankfullJBDialog(QtWidgets.QDialog, FORM_CLASS):
             self.crs = pyproj.CRS.from_string(project_crs)
         except pyproj.exceptions.CRSError:
             self.crs = pyproj.CRS.from_epsg(3948)  # Utiliser EPSG:3948 par défaut
-            QMessageBox.warning(
-                self,
-                "Avertissement",
-                "CRS EPSG:3948 utilisé par défaut.",
-            )
+            # QMessageBox.warning(
+            #    self,
+            #    "Avertissement",
+            #    "CRS EPSG:3948 utilisé par défaut.",
+            # )
 
         qgis_crs = QgsCoordinateReferenceSystem()
         qgis_crs.createFromOgcWmsCrs(self.crs.to_string())
@@ -455,11 +454,11 @@ class bankfullJBDialog(QtWidgets.QDialog, FORM_CLASS):
                 ax.set_facecolor((0.56, 0.93, 0.56, 0.10))
                 ax.scatter(distance, altitude, color="black", s=2)
                 ax.set_title(
-                    f"Profil en travers n°{group_name}", fontsize=11, weight="bold"
+                    f"Profil en travers n°{group_name}", fontsize=11,
                 )
                 ax.set_xlabel("Distance (m)", fontsize=11)
                 ax.set_ylabel("Altitude (m)", fontsize=11)
-                ax.grid(True)
+                ax.grid(False)
                 plt.tight_layout()
                 # Ajout du graphique à la scène
                 layout.addWidget(FigureCanvas(fig))
@@ -608,7 +607,7 @@ class bankfullJBDialog(QtWidgets.QDialog, FORM_CLASS):
                 )
                 ax.set_xlabel("Altitude (m)", fontsize=11)
                 ax.set_ylabel("Profondeur Hydraulique", fontsize=11)
-                ax.grid(True)
+                ax.grid(False)
 
                 # Find corresponding spline results
                 for result in self.spline_results:
@@ -753,7 +752,7 @@ class bankfullJBDialog(QtWidgets.QDialog, FORM_CLASS):
                 layout = QtWidgets.QVBoxLayout(graph_widget)
 
                 # Création du graphique matplotlib
-                fig, ax = plt.subplots(figsize=(8, 6))
+                fig, ax = plt.subplots()
                 ax.set_facecolor((0.85, 0.85, 0.85, 0.10))
                 alti = cross_section_data[
                     cross_section_data["x_sec_id"] == transect_id
@@ -761,6 +760,7 @@ class bankfullJBDialog(QtWidgets.QDialog, FORM_CLASS):
                 distance = cross_section_data[
                     cross_section_data["x_sec_id"] == transect_id
                 ]["Distance"].to_numpy()
+
                 # Tracé de la courbe de courbure et des pics détectés
                 ax.plot(
                     distance, alti, label="Profil en travers", zorder=1, color="#9A6200"
@@ -823,8 +823,12 @@ class bankfullJBDialog(QtWidgets.QDialog, FORM_CLASS):
                 ax.set_xlabel("Distance (m)")
                 ax.set_ylabel("Altitude (m)")
                 ax.legend()
-                ax.grid(True)
-                plt.tight_layout()
+                ax.grid(False)
+
+                # Ajuster la taille du graphique à la taille du QGraphicsView
+                graph_widget.setMinimumSize(view_height, view_height)
+
+                plt.tight_layout()  # Ajustement automatique du layout
 
                 # Ajout du graphique à la scène
                 layout.addWidget(FigureCanvas(fig))
@@ -835,7 +839,6 @@ class bankfullJBDialog(QtWidgets.QDialog, FORM_CLASS):
         self.graphicsView_pic_curve.fitInView(
             scene.sceneRect(), QtCore.Qt.KeepAspectRatio
         )
-
         # Exporter les données conservées vers un fichier CSV
         if self.selected_points_data:
             self.exporter_dataframe_csv("selected_points_data.csv")
@@ -1040,7 +1043,7 @@ class bankfullJBDialog(QtWidgets.QDialog, FORM_CLASS):
                 )
                 ax.set_xlabel("Distance (m)", fontsize=11)
                 ax.set_ylabel("Altitude (m)", fontsize=11)
-                ax.grid(True)
+                ax.grid(False)
 
                 if bankfull_altitude is not None:
                     # Tracer la droite d'altitude de débordement
@@ -1224,7 +1227,6 @@ class bankfullJBDialog(QtWidgets.QDialog, FORM_CLASS):
                         selected_point["altitude"],
                         color="red",
                         s=40,
-                        label="Point conservé",
                     )
                     altitude_value = selected_point["altitude"].iloc[0]
                     label_text = (
@@ -1270,7 +1272,7 @@ class bankfullJBDialog(QtWidgets.QDialog, FORM_CLASS):
                 ax.set_xlabel("Distance", fontsize=11)
                 ax.set_ylabel("Altitude", fontsize=11)
                 ax.legend()
-                ax.grid(True)
+                ax.grid(False)
                 plt.tight_layout()
 
                 # Ajout du graphique à la scène

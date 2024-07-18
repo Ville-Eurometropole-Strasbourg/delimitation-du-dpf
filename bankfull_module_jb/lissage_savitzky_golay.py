@@ -45,7 +45,6 @@ def curve_Savitzky_Golay(
         curve = group["POINT_Z"]
         # Lissage de la courbe de courbure à l'aide d'un filtre
         smoothed_curve = savgol_filter(curve, window_length=9, polyorder=2)
-        # print("smoothed_curve :", smoothed_curve)
 
         first_derivative = np.gradient(smoothed_curve)
 

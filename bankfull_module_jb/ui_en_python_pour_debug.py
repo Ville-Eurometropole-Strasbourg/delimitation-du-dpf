@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 
-# Form implementation generated from reading ui file '.\bankfull_module_JB_dialog_base_test.ui'
+# Form implementation generated from reading ui file
+# '.\bankfull_module_JB_dialog_base_test.ui'
 #
 # Created by: PyQt5 UI code generator 5.15.4
 #
@@ -75,21 +76,35 @@ class Ui_bankfullJBDialogBase(object):
         self.label_36 = QtWidgets.QLabel(self.tab_Pretraitements)
         self.label_36.setObjectName("label_36")
         self.gridLayout.addWidget(self.label_36, 1, 1, 1, 1)
-        self.horizontalSlider_visualisation_transects = QtWidgets.QSlider(self.tab_Pretraitements)
+        self.horizontalSlider_visualisation_transects = QtWidgets.QSlider(
+            self.tab_Pretraitements
+        )
         self.horizontalSlider_visualisation_transects.setMaximum(50)
-        self.horizontalSlider_visualisation_transects.setOrientation(QtCore.Qt.Horizontal)
-        self.horizontalSlider_visualisation_transects.setObjectName("horizontalSlider_visualisation_transects")
-        self.gridLayout.addWidget(self.horizontalSlider_visualisation_transects, 13, 1, 1, 4)
+        self.horizontalSlider_visualisation_transects.setOrientation(
+            QtCore.Qt.Horizontal
+        )
+        self.horizontalSlider_visualisation_transects.setObjectName(
+            "horizontalSlider_visualisation_transects"
+        )
+        self.gridLayout.addWidget(
+            self.horizontalSlider_visualisation_transects, 13, 1, 1, 4
+        )
         self.graphicsView_transects = QtWidgets.QGraphicsView(self.tab_Pretraitements)
         self.graphicsView_transects.setObjectName("graphicsView_transects")
         self.gridLayout.addWidget(self.graphicsView_transects, 12, 1, 1, 4)
-        self.pushButton_CalculerCenterline = QtWidgets.QPushButton(self.tab_Pretraitements)
-        self.pushButton_CalculerCenterline.setObjectName("pushButton_CalculerCenterline")
+        self.pushButton_CalculerCenterline = QtWidgets.QPushButton(
+            self.tab_Pretraitements
+        )
+        self.pushButton_CalculerCenterline.setObjectName(
+            "pushButton_CalculerCenterline"
+        )
         self.gridLayout.addWidget(self.pushButton_CalculerCenterline, 5, 3, 1, 2)
         self.comboBox_polygon = QtWidgets.QComboBox(self.tab_Pretraitements)
         self.comboBox_polygon.setObjectName("comboBox_polygon")
         self.gridLayout.addWidget(self.comboBox_polygon, 3, 3, 1, 2)
-        self.pushButton_tracer_transects = QtWidgets.QPushButton(self.tab_Pretraitements)
+        self.pushButton_tracer_transects = QtWidgets.QPushButton(
+            self.tab_Pretraitements
+        )
         self.pushButton_tracer_transects.setObjectName("pushButton_tracer_transects")
         self.gridLayout.addWidget(self.pushButton_tracer_transects, 11, 4, 1, 1)
         self.label_29 = QtWidgets.QLabel(self.tab_Pretraitements)
@@ -101,7 +116,9 @@ class Ui_bankfullJBDialogBase(object):
         self.mQgsFileWidget_folder.setFullUrl(False)
         self.mQgsFileWidget_folder.setObjectName("mQgsFileWidget_folder")
         self.gridLayout.addWidget(self.mQgsFileWidget_folder, 1, 3, 1, 2)
-        self.pushButton_CalculerTransects = QtWidgets.QPushButton(self.tab_Pretraitements)
+        self.pushButton_CalculerTransects = QtWidgets.QPushButton(
+            self.tab_Pretraitements
+        )
         self.pushButton_CalculerTransects.setObjectName("pushButton_CalculerTransects")
         self.gridLayout.addWidget(self.pushButton_CalculerTransects, 8, 4, 1, 1)
         self.label_27 = QtWidgets.QLabel(self.tab_Pretraitements)
@@ -116,7 +133,9 @@ class Ui_bankfullJBDialogBase(object):
         self.label.setFont(font)
         self.label.setObjectName("label")
         self.gridLayout.addWidget(self.label, 0, 1, 1, 2)
-        self.pushButton_Exporter_donnees = QtWidgets.QPushButton(self.tab_Pretraitements)
+        self.pushButton_Exporter_donnees = QtWidgets.QPushButton(
+            self.tab_Pretraitements
+        )
         self.pushButton_Exporter_donnees.setObjectName("pushButton_Exporter_donnees")
         self.gridLayout.addWidget(self.pushButton_Exporter_donnees, 10, 4, 1, 1)
         self.label_30 = QtWidgets.QLabel(self.tab_Pretraitements)
@@ -174,9 +193,15 @@ class Ui_bankfullJBDialogBase(object):
         self.pushButton_fit_biquadratic = QtWidgets.QPushButton(self.tab_Courbure)
         self.pushButton_fit_biquadratic.setObjectName("pushButton_fit_biquadratic")
         self.gridLayout_2.addWidget(self.pushButton_fit_biquadratic, 4, 2, 1, 1)
-        self.pushButton_afficher_courbe_along_transect = QtWidgets.QPushButton(self.tab_Courbure)
-        self.pushButton_afficher_courbe_along_transect.setObjectName("pushButton_afficher_courbe_along_transect")
-        self.gridLayout_2.addWidget(self.pushButton_afficher_courbe_along_transect, 5, 2, 1, 1)
+        self.pushButton_afficher_courbe_along_transect = QtWidgets.QPushButton(
+            self.tab_Courbure
+        )
+        self.pushButton_afficher_courbe_along_transect.setObjectName(
+            "pushButton_afficher_courbe_along_transect"
+        )
+        self.gridLayout_2.addWidget(
+            self.pushButton_afficher_courbe_along_transect, 5, 2, 1, 1
+        )
         self.label_12 = QtWidgets.QLabel(self.tab_Courbure)
         font = QtGui.QFont()
         font.setFamily("Arial")
@@ -232,11 +257,17 @@ class Ui_bankfullJBDialogBase(object):
         self.label_20.setObjectName("label_20")
         self.gridLayout_3.addWidget(self.label_20, 3, 0, 1, 2)
         self.graphicsView_prof_hydr = QtWidgets.QGraphicsView(self.tab_Prof_Hydraulique)
-        self.graphicsView_prof_hydr.setVerticalScrollBarPolicy(QtCore.Qt.ScrollBarAsNeeded)
-        self.graphicsView_prof_hydr.setHorizontalScrollBarPolicy(QtCore.Qt.ScrollBarAsNeeded)
+        self.graphicsView_prof_hydr.setVerticalScrollBarPolicy(
+            QtCore.Qt.ScrollBarAsNeeded
+        )
+        self.graphicsView_prof_hydr.setHorizontalScrollBarPolicy(
+            QtCore.Qt.ScrollBarAsNeeded
+        )
         self.graphicsView_prof_hydr.setInteractive(True)
         self.graphicsView_prof_hydr.setSceneRect(QtCore.QRectF(0.0, 0.0, 0.0, 0.0))
-        self.graphicsView_prof_hydr.setRubberBandSelectionMode(QtCore.Qt.IntersectsItemShape)
+        self.graphicsView_prof_hydr.setRubberBandSelectionMode(
+            QtCore.Qt.IntersectsItemShape
+        )
         self.graphicsView_prof_hydr.setObjectName("graphicsView_prof_hydr")
         self.gridLayout_3.addWidget(self.graphicsView_prof_hydr, 6, 0, 1, 4)
         self.lineEdit_test_size = QtWidgets.QLineEdit(self.tab_Prof_Hydraulique)
@@ -262,7 +293,9 @@ class Ui_bankfullJBDialogBase(object):
         self.lineEdit_filtrage_aires.setAlignment(QtCore.Qt.AlignCenter)
         self.lineEdit_filtrage_aires.setObjectName("lineEdit_filtrage_aires")
         self.gridLayout_3.addWidget(self.lineEdit_filtrage_aires, 3, 2, 1, 1)
-        self.pushButton_CalculerProfHydr = QtWidgets.QPushButton(self.tab_Prof_Hydraulique)
+        self.pushButton_CalculerProfHydr = QtWidgets.QPushButton(
+            self.tab_Prof_Hydraulique
+        )
         self.pushButton_CalculerProfHydr.setObjectName("pushButton_CalculerProfHydr")
         self.gridLayout_3.addWidget(self.pushButton_CalculerProfHydr, 4, 3, 1, 1)
         self.label_28 = QtWidgets.QLabel(self.tab_Prof_Hydraulique)
@@ -289,7 +322,9 @@ class Ui_bankfullJBDialogBase(object):
         self.lineEdit_fin_intervalle.setAlignment(QtCore.Qt.AlignCenter)
         self.lineEdit_fin_intervalle.setObjectName("lineEdit_fin_intervalle")
         self.gridLayout_3.addWidget(self.lineEdit_fin_intervalle, 11, 1, 1, 1)
-        self.pushButton_Tracer_prof_hydr = QtWidgets.QPushButton(self.tab_Prof_Hydraulique)
+        self.pushButton_Tracer_prof_hydr = QtWidgets.QPushButton(
+            self.tab_Prof_Hydraulique
+        )
         self.pushButton_Tracer_prof_hydr.setObjectName("pushButton_Tracer_prof_hydr")
         self.gridLayout_3.addWidget(self.pushButton_Tracer_prof_hydr, 5, 3, 1, 1)
         self.label_33 = QtWidgets.QLabel(self.tab_Prof_Hydraulique)
@@ -352,7 +387,9 @@ class Ui_bankfullJBDialogBase(object):
         self.label_15.setFont(font)
         self.label_15.setObjectName("label_15")
         self.gridLayout_3.addWidget(self.label_15, 5, 0, 1, 3)
-        self.pushButton_Lisser_courbes = QtWidgets.QPushButton(self.tab_Prof_Hydraulique)
+        self.pushButton_Lisser_courbes = QtWidgets.QPushButton(
+            self.tab_Prof_Hydraulique
+        )
         self.pushButton_Lisser_courbes.setObjectName("pushButton_Lisser_courbes")
         self.gridLayout_3.addWidget(self.pushButton_Lisser_courbes, 13, 3, 1, 2)
         self.label_34 = QtWidgets.QLabel(self.tab_Prof_Hydraulique)
@@ -430,7 +467,9 @@ class Ui_bankfullJBDialogBase(object):
         self.verticalLayout.addWidget(self.tabWidget)
         self.buttonBox = QtWidgets.QDialogButtonBox(bankfullJBDialogBase)
         self.buttonBox.setOrientation(QtCore.Qt.Horizontal)
-        self.buttonBox.setStandardButtons(QtWidgets.QDialogButtonBox.Cancel|QtWidgets.QDialogButtonBox.Ok)
+        self.buttonBox.setStandardButtons(
+            QtWidgets.QDialogButtonBox.Cancel | QtWidgets.QDialogButtonBox.Ok
+        )
         self.buttonBox.setObjectName("buttonBox")
         self.verticalLayout.addWidget(self.buttonBox)
 
@@ -442,58 +481,170 @@ class Ui_bankfullJBDialogBase(object):
 
     def retranslateUi(self, bankfullJBDialogBase):
         _translate = QtCore.QCoreApplication.translate
-        bankfullJBDialogBase.setWindowTitle(_translate("bankfullJBDialogBase", "Dialog"))
+        bankfullJBDialogBase.setWindowTitle(
+            _translate("bankfullJBDialogBase", "Dialog")
+        )
         self.label_5.setText(_translate("bankfullJBDialogBase", "Pas (m) : "))
-        self.label_3.setText(_translate("bankfullJBDialogBase", "3. Génération des transects "))
-        self.label_2.setText(_translate("bankfullJBDialogBase", "2. Calcul de la ligne centrale "))
+        self.label_3.setText(
+            _translate("bankfullJBDialogBase", "3. Génération des transects ")
+        )
+        self.label_2.setText(
+            _translate("bankfullJBDialogBase", "2. Calcul de la ligne centrale ")
+        )
         self.label_4.setText(_translate("bankfullJBDialogBase", "Longueur (m) : "))
-        self.label_31.setText(_translate("bankfullJBDialogBase", "5. Tracé des profils en travers"))
-        self.label_36.setText(_translate("bankfullJBDialogBase", "Répertoire d\'enregistrement :"))
-        self.pushButton_CalculerCenterline.setText(_translate("bankfullJBDialogBase", "Calculer "))
-        self.pushButton_tracer_transects.setText(_translate("bankfullJBDialogBase", "Tracer"))
+        self.label_31.setText(
+            _translate("bankfullJBDialogBase", "5. Tracé des profils en travers")
+        )
+        self.label_36.setText(
+            _translate("bankfullJBDialogBase", "Répertoire d'enregistrement :")
+        )
+        self.pushButton_CalculerCenterline.setText(
+            _translate("bankfullJBDialogBase", "Calculer ")
+        )
+        self.pushButton_tracer_transects.setText(
+            _translate("bankfullJBDialogBase", "Tracer")
+        )
         self.label_29.setText(_translate("bankfullJBDialogBase", "Couche Polygone : "))
-        self.pushButton_CalculerTransects.setText(_translate("bankfullJBDialogBase", "Calculer "))
+        self.pushButton_CalculerTransects.setText(
+            _translate("bankfullJBDialogBase", "Calculer ")
+        )
         self.label_27.setText(_translate("bankfullJBDialogBase", "Couche Raster : "))
-        self.label.setText(_translate("bankfullJBDialogBase", "1. Sélection du répertoire et des couches"))
-        self.pushButton_Exporter_donnees.setText(_translate("bankfullJBDialogBase", "Export des données  (.csv)"))
-        self.label_30.setText(_translate("bankfullJBDialogBase", "4. Interpolation des points le long des transects"))
-        self.tabWidget.setTabText(self.tabWidget.indexOf(self.tab_Pretraitements), _translate("bankfullJBDialogBase", "Prétraitements"))
-        self.label_7.setText(_translate("bankfullJBDialogBase", "Détermination du niveau à pleins bords "))
-        self.label_8.setText(_translate("bankfullJBDialogBase", "> Méthode basée sur  la courbure minimale du relief"))
-        self.textBrowser_methodecourbure.setHtml(_translate("bankfullJBDialogBase", "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.0//EN\" \"http://www.w3.org/TR/REC-html40/strict.dtd\">\n"
-"<html><head><meta name=\"qrichtext\" content=\"1\" /><style type=\"text/css\">\n"
-"p, li { white-space: pre-wrap; }\n"
-"</style></head><body style=\" font-family:\'Arial\'; font-size:9pt; font-weight:400; font-style:normal;\">\n"
-"<p style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" font-size:8.25pt; font-style:italic; color:#848484;\">La méthode basée sur le calcul de la courbure minimale du relief repose sur les travaux de (Sofia et al., 2015). L\'utilisateur specifie la résolution du MNT raster ainsi que la taille de la fenêtre mobile. </span></p>\n"
-"<p style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" font-size:8.25pt; font-style:italic; color:#848484;\">La courbure est ensuite calculée pour chaque point des transects et une approche statistique QQ-plot est utilisée afin de détecter le seuil correspondant au débordement. </span></p></body></html>"))
-        self.label_11.setText(_translate("bankfullJBDialogBase", "Ajustement d\'une fonction biquadratique sur la surface du MNT "))
-        self.label_9.setText(_translate("bankfullJBDialogBase", "Taille de la fenêtre mobile :"))
-        self.pushButton_fit_biquadratic.setText(_translate("bankfullJBDialogBase", "Calculer"))
-        self.pushButton_afficher_courbe_along_transect.setText(_translate("bankfullJBDialogBase", "Afficher"))
-        self.label_12.setText(_translate("bankfullJBDialogBase", "Calcul de la courbure "))
-        self.label_10.setText(_translate("bankfullJBDialogBase", "Résolution du MNT (m) : "))
-        self.pushButton_CalculerCourbure.setText(_translate("bankfullJBDialogBase", "Calculer"))
-        self.tabWidget.setTabText(self.tabWidget.indexOf(self.tab_Courbure), _translate("bankfullJBDialogBase", "Courbure "))
+        self.label.setText(
+            _translate(
+                "bankfullJBDialogBase", "1. Sélection du répertoire et des couches"
+            )
+        )
+        self.pushButton_Exporter_donnees.setText(
+            _translate("bankfullJBDialogBase", "Export des données  (.csv)")
+        )
+        self.label_30.setText(
+            _translate(
+                "bankfullJBDialogBase",
+                "4. Interpolation des points le long des transects",
+            )
+        )
+        self.tabWidget.setTabText(
+            self.tabWidget.indexOf(self.tab_Pretraitements),
+            _translate("bankfullJBDialogBase", "Prétraitements"),
+        )
+        self.label_7.setText(
+            _translate(
+                "bankfullJBDialogBase", "Détermination du niveau à pleins bords "
+            )
+        )
+        self.label_8.setText(
+            _translate(
+                "bankfullJBDialogBase",
+                "> Méthode basée sur  la courbure minimale du relief",
+            )
+        )
+        self.textBrowser_methodecourbure.setHtml(
+            _translate(
+                "bankfullJBDialogBase",
+                '<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">\n'
+                '<html><head><meta name="qrichtext" content="1" /><style type="text/css">\n'
+                "p, li { white-space: pre-wrap; }\n"
+                "</style></head><body style=\" font-family:'Arial'; font-size:9pt; font-weight:400; font-style:normal;\">\n"
+                '<p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;"><span style=" font-size:8.25pt; font-style:italic; color:#848484;">La méthode basée sur le calcul de la courbure minimale du relief repose sur les travaux de (Sofia et al., 2015). L\'utilisateur specifie la résolution du MNT raster ainsi que la taille de la fenêtre mobile. </span></p>\n'
+                '<p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;"><span style=" font-size:8.25pt; font-style:italic; color:#848484;">La courbure est ensuite calculée pour chaque point des transects et une approche statistique QQ-plot est utilisée afin de détecter le seuil correspondant au débordement. </span></p></body></html>',
+            )
+        )
+        self.label_11.setText(
+            _translate(
+                "bankfullJBDialogBase",
+                "Ajustement d'une fonction biquadratique sur la surface du MNT ",
+            )
+        )
+        self.label_9.setText(
+            _translate("bankfullJBDialogBase", "Taille de la fenêtre mobile :")
+        )
+        self.pushButton_fit_biquadratic.setText(
+            _translate("bankfullJBDialogBase", "Calculer")
+        )
+        self.pushButton_afficher_courbe_along_transect.setText(
+            _translate("bankfullJBDialogBase", "Afficher")
+        )
+        self.label_12.setText(
+            _translate("bankfullJBDialogBase", "Calcul de la courbure ")
+        )
+        self.label_10.setText(
+            _translate("bankfullJBDialogBase", "Résolution du MNT (m) : ")
+        )
+        self.pushButton_CalculerCourbure.setText(
+            _translate("bankfullJBDialogBase", "Calculer")
+        )
+        self.tabWidget.setTabText(
+            self.tabWidget.indexOf(self.tab_Courbure),
+            _translate("bankfullJBDialogBase", "Courbure "),
+        )
         self.label_24.setText(_translate("bankfullJBDialogBase", "Borne inférieure :"))
-        self.pushButton_CalculerAires.setText(_translate("bankfullJBDialogBase", "Calculer "))
-        self.label_20.setText(_translate("bankfullJBDialogBase", "Critère de filtrage des aires (m²) : "))
-        self.pushButton_CalculerProfHydr.setText(_translate("bankfullJBDialogBase", "Calculer "))
-        self.label_28.setText(_translate("bankfullJBDialogBase", "2. Calcul de la prodondeur hydraulique : "))
-        self.label_13.setText(_translate("bankfullJBDialogBase", "Détermination du niveau à pleins bords "))
-        self.pushButton_Tracer_prof_hydr.setText(_translate("bankfullJBDialogBase", "Tracer"))
+        self.pushButton_CalculerAires.setText(
+            _translate("bankfullJBDialogBase", "Calculer ")
+        )
+        self.label_20.setText(
+            _translate("bankfullJBDialogBase", "Critère de filtrage des aires (m²) : ")
+        )
+        self.pushButton_CalculerProfHydr.setText(
+            _translate("bankfullJBDialogBase", "Calculer ")
+        )
+        self.label_28.setText(
+            _translate(
+                "bankfullJBDialogBase", "2. Calcul de la prodondeur hydraulique : "
+            )
+        )
+        self.label_13.setText(
+            _translate(
+                "bankfullJBDialogBase", "Détermination du niveau à pleins bords "
+            )
+        )
+        self.pushButton_Tracer_prof_hydr.setText(
+            _translate("bankfullJBDialogBase", "Tracer")
+        )
         self.label_33.setText(_translate("bankfullJBDialogBase", "Borne supérieure :"))
-        self.label_22.setText(_translate("bankfullJBDialogBase", "Valeurs de s à tester : "))
+        self.label_22.setText(
+            _translate("bankfullJBDialogBase", "Valeurs de s à tester : ")
+        )
         self.label_23.setText(_translate("bankfullJBDialogBase", "Ensemble de test : "))
-        self.label_14.setText(_translate("bankfullJBDialogBase", "> Méthode basée sur  la profondeur hydraulique"))
-        self.label_32.setText(_translate("bankfullJBDialogBase", "3. Lissage de la courbe de prodondeur hydraulique en focntion de l\'altitude : "))
-        self.label_15.setText(_translate("bankfullJBDialogBase", "Visualisation des résultats :"))
-        self.pushButton_Lisser_courbes.setText(_translate("bankfullJBDialogBase", "Lissage"))
+        self.label_14.setText(
+            _translate(
+                "bankfullJBDialogBase", "> Méthode basée sur  la profondeur hydraulique"
+            )
+        )
+        self.label_32.setText(
+            _translate(
+                "bankfullJBDialogBase",
+                "3. Lissage de la courbe de prodondeur hydraulique en fonction",
+                "de l'altitude : ",
+            )
+        )
+        self.label_15.setText(
+            _translate("bankfullJBDialogBase", "Visualisation des résultats :")
+        )
+        self.pushButton_Lisser_courbes.setText(
+            _translate("bankfullJBDialogBase", "Lissage")
+        )
         self.label_34.setText(_translate("bankfullJBDialogBase", "Pas  : "))
-        self.label_26.setText(_translate("bankfullJBDialogBase", "1. Calcul de l\'aire de la section mouillée :"))
-        self.tabWidget.setTabText(self.tabWidget.indexOf(self.tab_Prof_Hydraulique), _translate("bankfullJBDialogBase", "Profondeur hydraulique"))
-        self.label_16.setText(_translate("bankfullJBDialogBase", "Méthode basée sur la profondeur hydraulique"))
+        self.label_26.setText(
+            _translate(
+                "bankfullJBDialogBase", "1. Calcul de l'aire de la section mouillée :"
+            )
+        )
+        self.tabWidget.setTabText(
+            self.tabWidget.indexOf(self.tab_Prof_Hydraulique),
+            _translate("bankfullJBDialogBase", "Profondeur hydraulique"),
+        )
+        self.label_16.setText(
+            _translate(
+                "bankfullJBDialogBase", "Méthode basée sur la profondeur hydraulique"
+            )
+        )
         self.label_17.setText(_translate("bankfullJBDialogBase", "RMSE point cloud "))
         self.label_18.setText(_translate("bankfullJBDialogBase", "RMSE DTM"))
         self.label_19.setText(_translate("bankfullJBDialogBase", "RMSE fitting"))
-        self.tabWidget.setTabText(self.tabWidget.indexOf(self.tab_2), _translate("bankfullJBDialogBase", "Analyse de précision"))
+        self.tabWidget.setTabText(
+            self.tabWidget.indexOf(self.tab_2),
+            _translate("bankfullJBDialogBase", "Analyse de précision"),
+        )
+
+
 from qgsfilewidget import QgsFileWidget
