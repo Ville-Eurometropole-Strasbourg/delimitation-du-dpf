@@ -607,7 +607,7 @@ class bankfullJBDialog(QtWidgets.QDialog, FORM_CLASS):
                     "Profondeur hydraulique en fonction de l'altitude", fontsize=11
                 )
                 ax.set_xlabel("Altitude (m)", fontsize=11)
-                ax.set_ylabel("Profondeur Hydraulique", fontsize=11)
+                ax.set_ylabel("Profondeur Hydraulique (m)", fontsize=11)
                 ax.grid(False)
 
                 # Find corresponding spline results
