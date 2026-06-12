@@ -1,4 +1,4 @@
-geopandas==0.14.3
+geopandas==0.14.4
 pygeoops==0.4.0
 numpy==1.22.4
 
